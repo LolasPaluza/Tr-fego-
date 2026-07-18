@@ -22,7 +22,7 @@ class Controller(ABC):
 
     name: str = "controller"
 
-    def reset(self) -> None:
+    def reset(self) -> None:  # noqa: B027 — hook opcional, no-op por padrão
         """Chamado no início de cada episódio (limpa estado interno)."""
 
     @abstractmethod

@@ -128,7 +128,9 @@ def plot_fairness_tradeoff(df: pd.DataFrame, out_dir: Path, scenario: str) -> Pa
         means, err_lo, err_hi = [], [], []
         for m in methods:
             mean, lo, hi = bootstrap_ci(sub.loc[sub["method"] == m, col].to_numpy())
-            means.append(mean); err_lo.append(mean - lo); err_hi.append(hi - mean)
+            means.append(mean)
+            err_lo.append(mean - lo)
+            err_hi.append(hi - mean)
         ax.bar(
             x + (offset - 0.5) * width, means, width, yerr=[err_lo, err_hi],
             capsize=4, label=label, color=color,

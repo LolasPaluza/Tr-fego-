@@ -61,7 +61,9 @@ class SumoIntersectionEnv(gym.Env):
         self.reward_calc = RewardCalculator(cfg, reward_mode)
 
         self.action_space = spaces.Discrete(N_STAGES)
-        self.observation_space = spaces.Box(0.0, 1.0, shape=(self.vectorizer.size,), dtype=np.float32)
+        self.observation_space = spaces.Box(
+            0.0, 1.0, shape=(self.vectorizer.size,), dtype=np.float32
+        )
 
         net = cfg.network
         self._lanes_by_approach: dict[str, list[str]] = {}
@@ -123,6 +125,12 @@ class SumoIntersectionEnv(gym.Env):
         if self.cfg.use_libsumo:
             import libsumo
 
+            # libsumo = 1 simulação por processo; fecha qualquer sim órfã
+            # (ex.: teste anterior que falhou sem close) antes de iniciar.
+            try:
+                libsumo.close()
+            except Exception:
+                pass
             libsumo.start(cmd)
             self._conn = libsumo
         else:

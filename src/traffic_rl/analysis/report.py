@@ -58,7 +58,8 @@ def _pvalue_table(tests: pd.DataFrame) -> str:
     if tests.empty:
         return "_Sem comparações (DQN ausente do conjunto avaliado)._"
     lines = [
-        "| Cenário | Baseline | p (bruto) | p (Bonferroni) | Significativo (α=0,05) | DQN melhor? |",
+        "| Cenário | Baseline | p (bruto) | p (Bonferroni) "
+        "| Significativo (α=0,05) | DQN melhor? |",
         "|---|---|---|---|---|---|",
     ]
     for _, r in tests.iterrows():
@@ -79,7 +80,8 @@ def _interpret_scenario(tests: pd.DataFrame, scenario: str) -> str:
     frases: list[str] = []
     for _, r in sub.iterrows():
         nome = METHOD_LABELS.get(r["baseline"], r["baseline"])
-        delta = 100.0 * (r["baseline_mean"] - r["dqn_mean"]) / max(r["baseline_mean"], 1e-9)
+        base_mean = max(r["baseline_mean"], 1e-9)
+        delta = 100.0 * (r["baseline_mean"] - r["dqn_mean"]) / base_mean
         if r["significativo"] and r["dqn_melhor"]:
             frases.append(
                 f"o DQN reduziu a espera média em {delta:.0f}% frente ao {nome} "

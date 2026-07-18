@@ -133,7 +133,11 @@ def train_seed(
         start_method="fork",
     )
     eval_env = SubprocVecEnv(
-        [partial(_env_factory, cfg, scenario, EVAL_DURING_TRAIN_BASE + seed, obs_mode, reward_mode)],
+        [
+            partial(
+                _env_factory, cfg, scenario, EVAL_DURING_TRAIN_BASE + seed, obs_mode, reward_mode
+            )
+        ],
         start_method="fork",
     )
     try:
@@ -213,6 +217,20 @@ def train_seed(
         train_env.close()
         eval_env.close()
     return run_dir
+
+
+def find_best_models(tag: str) -> dict[int, Path]:
+    """{seed: best_model.zip} dos runs de treino existentes de um tag."""
+    models: dict[int, Path] = {}
+    group = runs_dir() / tag
+    for seed_dir in sorted(group.glob("seed_*")):
+        best = seed_dir / "best_model.zip"
+        if best.exists():
+            try:
+                models[int(seed_dir.name.removeprefix("seed_"))] = best
+            except ValueError:
+                continue
+    return models
 
 
 def train_all_seeds(

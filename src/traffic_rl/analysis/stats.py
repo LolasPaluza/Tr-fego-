@@ -99,3 +99,38 @@ def dqn_vs_baselines(
                 }
             )
     return pd.DataFrame(rows, columns=_TEST_COLUMNS)
+
+
+_PAIR_COLUMNS = [
+    "scenario", "method_a", "method_b", "p_value", "p_bonferroni",
+    "significativo", "mean_a", "mean_b",
+]
+
+
+def pairwise_tests(
+    df: pd.DataFrame, metric: str = PRIMARY_METRIC, alpha: float = 0.05
+) -> pd.DataFrame:
+    """Mann-Whitney U entre TODOS os pares de métodos, por cenário, com
+    Bonferroni sobre o nº de pares — usado nas tabelas das ablações."""
+    from itertools import combinations
+
+    rows = []
+    for scenario, group in df.groupby("scenario"):
+        methods = sorted(group["method"].unique())
+        pairs = list(combinations(methods, 2))
+        for a, b in pairs:
+            va = group.loc[group["method"] == a, metric].to_numpy()
+            vb = group.loc[group["method"] == b, metric].to_numpy()
+            if len(va) == 0 or len(vb) == 0:
+                continue
+            stat = scipy_stats.mannwhitneyu(va, vb, alternative="two-sided")
+            p_corr = min(stat.pvalue * max(len(pairs), 1), 1.0)
+            rows.append(
+                {
+                    "scenario": scenario, "method_a": a, "method_b": b,
+                    "p_value": float(stat.pvalue), "p_bonferroni": float(p_corr),
+                    "significativo": bool(p_corr < alpha),
+                    "mean_a": float(va.mean()), "mean_b": float(vb.mean()),
+                }
+            )
+    return pd.DataFrame(rows, columns=_PAIR_COLUMNS)
