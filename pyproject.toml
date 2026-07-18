@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traffic-rl"
+version = "0.1.0"
+description = "TrafficRL — Controle semafórico adaptativo via Deep RL (Fase 1: cruzamento único)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "eclipse-sumo>=1.19",
+    "traci>=1.19",
+    "sumolib>=1.19",
+    "libsumo>=1.19",
+    "gymnasium>=0.29",
+    "stable-baselines3>=2.3",
+    "torch>=2.0",
+    "pandas>=2.0",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "scipy>=1.11",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "tensorboard>=2.15",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4"]
+
+[project.scripts]
+traffic-rl = "traffic_rl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.coverage.run]
+source = ["src/traffic_rl"]
+omit = ["src/traffic_rl/analysis/plots.py"]

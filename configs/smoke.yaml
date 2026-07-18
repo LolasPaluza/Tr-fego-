@@ -1,0 +1,19 @@
+# Overrides do modo smoke (validação rápida no sandbox cloud e na máquina local).
+# Aplicado POR CIMA de default.yaml — só liste o que muda.
+# Episódios curtos (600s) e treino de poucos milhares de passos: o objetivo é
+# validar o pipeline de ponta a ponta, não obter uma política boa.
+
+env:
+  episode_length_s: 600.0
+
+train:
+  seeds: [42]
+  total_timesteps: 5000
+  eval_freq: 2000
+  n_eval_episodes: 1
+  checkpoint_freq: 2000
+  dqn:
+    learning_starts: 200
+
+eval:
+  n_episodes: 2

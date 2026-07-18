@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Artefatos de simulação/treino (versionados apenas quando explicitamente pedido)
+results/runs/
+results/figures/
+*.log
+nohup.out
+
+# Arquivos gerados do SUMO (regeneráveis por script)
+data/generated/
