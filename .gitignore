@@ -10,8 +10,7 @@ build/
 dist/
 
 # Artefatos de simulação/treino (versionados apenas quando explicitamente pedido)
-results/runs/
-results/figures/
+results/
 *.log
 nohup.out
 
