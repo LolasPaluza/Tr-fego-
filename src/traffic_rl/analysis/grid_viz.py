@@ -28,8 +28,10 @@ from traffic_rl.envs.grid_env import GridTrafficEnv
 from traffic_rl.envs.grid_network import GridTopology
 from traffic_rl.grid_config import GridProjectConfig
 
+Segment = tuple[tuple[float, float], tuple[float, float]]
 
-def _edge_segments(topo: GridTopology) -> dict[str, tuple[tuple[float, float], tuple[float, float]]]:
+
+def _edge_segments(topo: GridTopology) -> dict[str, Segment]:
     """Coordenadas (início, fim) de cada aresta, com leve offset perpendicular
     para separar os dois sentidos da mesma rua no desenho."""
     spec = topo.spec

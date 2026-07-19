@@ -30,7 +30,7 @@ def check(nome: str, fn) -> None:
 
 
 def python_version():
-    if sys.version_info < (3, 11):
+    if sys.version_info < (3, 11):  # noqa: UP036 — diagnóstico intencional fora do pip
         raise RuntimeError(f"Python >= 3.11 necessário (atual: {sys.version.split()[0]})")
     return sys.version.split()[0]
 
