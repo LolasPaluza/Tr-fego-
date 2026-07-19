@@ -149,6 +149,23 @@ e saída dá o tipo de conversão. **Consequências:** o mesmo código serve à
 Fase 1 (testes seguem verdes) e a qualquer cruzamento em cruz do grid;
 pré-requisito direto da Fase 4 (malhas OSM têm geometria, não nomes).
 
+## ADR-017 — Calibração da demanda default do grid (medida, não chutada)
+
+**Contexto:** os primeiros fluxos default do grid.yaml (avenidas 1100/900,
+esquerda 15%) produziam gridlock estrutural em 1 h simulada: as conversões
+das avenidas despejam veículos nas locais de 1 faixa, onde a espera pela fase
+de esquerda bloqueia a faixa inteira; as filas retornam (spillback) pelos
+quarteirões de 300 m e travam a malha — TODOS os métodos afogavam (espera
+média > 800 s, ~40% dos veículos presos), inutilizando a comparação.
+**Decisão:** calibrar o default por sondagem empírica com o baseline forte
+(fixo_proporcional): avenidas 550/450, locais 120–150, conversões 84/10/6 —
+ponto "carregado porém viável" (espera ~105 s, 93% concluem; fixo_igual
+~176 s, deixando espaço para os métodos se diferenciarem). O aviso de
+capacidade está comentado no próprio grid.yaml. **Consequências:** o
+fenômeno de saturação continua acessível (basta subir os fluxos), mas o
+default conta uma história comparável; a super-saturação vira experimento
+consciente, não armadilha.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

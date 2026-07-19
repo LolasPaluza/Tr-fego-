@@ -13,19 +13,27 @@
 #
 # Exemplo default: grid 3×3 inspirado em SP — uma avenida cortando ruas locais
 # em cada direção.
+#
+# CAPACIDADE (leia antes de aumentar os fluxos — ADR-017): num grid, cada rua
+# atravessa VÁRIOS semáforos e as conversões despejam tráfego das avenidas nas
+# ruas locais de 1 faixa (onde um veículo esperando a esquerda bloqueia a faixa
+# inteira). Na malha 3×3, avenida ≳ 700 veíc/h/sentido ou esquerda ≳ 10% levam
+# a gridlock em 1h de simulação — TODOS os métodos afogam e a comparação perde
+# sentido. Os valores abaixo deixam a malha carregada porém viável
+# (fixo_proporcional ~105 s de espera média; fixo_igual ~176 s).
 
 grid:
   rows:
-    - {name: "Rua Harmonia",    class: local,   flow_vph: 250}
-    - {name: "Av. Paulista",    class: avenida, flow_vph: 1100}
-    - {name: "Rua Wisard",      class: local,   flow_vph: 200}
+    - {name: "Rua Harmonia",    class: local,   flow_vph: 130}
+    - {name: "Av. Paulista",    class: avenida, flow_vph: 550}
+    - {name: "Rua Wisard",      class: local,   flow_vph: 120}
   cols:
-    - {name: "Rua Girassol",    class: local,   flow_vph: 220}
-    - {name: "Av. Rebouças",    class: avenida, flow_vph: 900}
-    - {name: "Rua Aspicuelta",  class: local,   flow_vph: 260}
+    - {name: "Rua Girassol",    class: local,   flow_vph: 120}
+    - {name: "Av. Rebouças",    class: avenida, flow_vph: 450}
+    - {name: "Rua Aspicuelta",  class: local,   flow_vph: 150}
   block_length_m: 300.0
   boundary_length_m: 300.0
-  turn_shares: {straight: 0.70, right: 0.15, left: 0.15}
+  turn_shares: {straight: 0.84, right: 0.10, left: 0.06}
   truck_share_avenida: 0.10
   truck_share_local: 0.0
 
