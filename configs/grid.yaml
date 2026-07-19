@@ -1,0 +1,66 @@
+# Fase 2 — SEU grid. Edite este arquivo para descrever a malha:
+#
+#   rows = ruas horizontais (leste-oeste), listadas de norte para sul
+#   cols = ruas verticais (norte-sul), listadas de oeste para leste
+#
+# Para cada rua: nome (aparece nos relatórios), classe e fluxo de entrada.
+#   class: avenida (3 faixas/sentido, 60 km/h) | local (1 faixa/sentido, 40 km/h)
+#   flow_vph: veículos/hora entrando por CADA sentido da rua
+#
+# As "ruas mais movimentadas" são as de maior flow_vph — o agente NÃO recebe
+# essa informação: cada cruzamento só vê suas filas locais e precisa aprender
+# a priorizar sozinho.
+#
+# Exemplo default: grid 3×3 inspirado em SP — uma avenida cortando ruas locais
+# em cada direção.
+
+grid:
+  rows:
+    - {name: "Rua Harmonia",    class: local,   flow_vph: 250}
+    - {name: "Av. Paulista",    class: avenida, flow_vph: 1100}
+    - {name: "Rua Wisard",      class: local,   flow_vph: 200}
+  cols:
+    - {name: "Rua Girassol",    class: local,   flow_vph: 220}
+    - {name: "Av. Rebouças",    class: avenida, flow_vph: 900}
+    - {name: "Rua Aspicuelta",  class: local,   flow_vph: 260}
+  block_length_m: 300.0
+  boundary_length_m: 300.0
+  turn_shares: {straight: 0.70, right: 0.15, left: 0.15}
+  truck_share_avenida: 0.10
+  truck_share_local: 0.0
+
+env:
+  signal: {min_green_s: 10.0, max_green_s: 120.0, yellow_s: 3.0, all_red_s: 2.0}
+  episode_length_s: 3600.0
+  delta_time_s: 5.0
+  reward_mode: r_espera
+  starvation: {enabled: true, threshold_s: 120.0, penalty: 1.0}
+  use_libsumo: true
+
+train:
+  scenario: grid           # informativo; o cenário do grid é este próprio arquivo
+  seeds: [42, 123, 7, 2024, 777]
+  total_timesteps: 300000
+  eval_freq: 10000
+  n_eval_episodes: 1       # 1 simulação de avaliação = 1 episódio POR cruzamento
+  checkpoint_freq: 25000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn:
+    learning_rate: 0.0005
+    buffer_size: 100000
+    learning_starts: 2000
+    batch_size: 64
+    gamma: 0.99
+    train_freq: 1
+    target_update_interval: 1000
+    exploration_fraction: 0.3
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.02
+    net_arch: [256, 256]
+    double_dqn: true
+
+eval:
+  n_episodes: 20
+  traffic_seed_base: 10000
+  scenarios: [grid]

@@ -103,6 +103,52 @@ hiperparâmetros de DQN. **Decisão:** todas as recompensas divididas por 100,
 ficando em ordem de grandeza ~[-5, 5]. **Consequências:** taxa de
 aprendizado/clipping servem às três variantes; nenhuma vence por mera escala.
 
+## ADR-013 — Fase 2: independent learners com parameter sharing (um DQN, K cruzamentos)
+
+**Contexto:** controlar K semáforos com RL admite (a) um agente centralizado
+(ação conjunta 4^K — explode), (b) K redes independentes (K× o custo de
+treino, nada compartilhado), (c) UMA rede compartilhada aplicada a cada
+cruzamento sobre sua observação local. **Decisão:** (c), implementado como um
+`VecEnv` do sb3 com `num_envs=K` sobre a MESMA simulação — cada decisão
+coleta K transições para o replay buffer comum. **Consequências:** o custo de
+treino independe de K por transição; a política generaliza entre cruzamentos
+(local×local e avenida×avenida compartilham estrutura); limitação honesta:
+sem comunicação entre agentes, coordenação (onda verde) só emerge
+implicitamente — tema da Fase 3. Exige observação de tamanho FIXO ⇒ grid usa
+obs_minimal (9d), cujas features são normalizadas pelas capacidades locais.
+
+## ADR-014 — Treino do grid: libsumo (treino) + TraCI (avaliação periódica)
+
+**Contexto:** o truque da Fase 1 (SubprocVecEnv, 1 env por subprocesso) não
+se aplica — o GridVecEnv já É um VecEnv e não pode ser aninhado; libsumo
+segue limitado a 1 simulação por processo. **Decisão:** env de treino em
+libsumo (rápido, em processo) e env de avaliação periódica em TraCI
+(processo sumo externo) — mecanismos independentes que coexistem.
+**Consequências:** avaliação ~5× mais lenta que libsumo, mas rara (a cada
+eval_freq); zero IPC custom.
+
+## ADR-015 — Demanda do grid: roteador próprio por caminhada aleatória
+
+**Contexto:** num grid, cada veículo precisa de rota completa; flows com
+`probability` (Fase 1) não escolhem conversões. Alternativas: jtrrouter do
+SUMO (mais uma etapa externa com semântica própria) ou roteador em Python.
+**Decisão:** roteador próprio — chegadas Bernoulli por segundo em cada
+entrada declarada, conversões sorteadas por `turn_shares` em cada cruzamento
+até sair da malha; arquivo `.rou.xml` por episódio, determinístico na seed.
+**Consequências:** controle e testabilidade totais (testes garantem que toda
+caminhada termina e que o volume bate com os fluxos declarados); ids de
+veículo carregam classe+rua de origem para a análise de justiça.
+
+## ADR-016 — Fases do semáforo derivadas por geometria
+
+**Contexto:** a Fase 1 mapeava movimentos por nomes de aresta (`in_E` etc.);
+o grid tem centenas de arestas com ids próprios. **Decisão:** generalizar a
+tabela de fases para derivar (aproximação, movimento) da GEOMETRIA — rumo da
+aresta de entrada dá a aproximação; produto vetorial entre rumos de entrada
+e saída dá o tipo de conversão. **Consequências:** o mesmo código serve à
+Fase 1 (testes seguem verdes) e a qualquer cruzamento em cruz do grid;
+pré-requisito direto da Fase 4 (malhas OSM têm geometria, não nomes).
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

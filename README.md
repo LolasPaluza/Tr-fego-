@@ -261,10 +261,56 @@ template (regras determinísticas sobre os números — não por LLM). Ao ler:
   ruído e cobertura parcial.
 - **Um algoritmo**: DQN apenas; PPO e afins ficam como ablação futura.
 
+## Fase 2 — SEU grid: declare as ruas movimentadas, o agente aprende os semáforos
+
+A Fase 2 generaliza tudo acima para uma malha NxM. Você descreve o grid em
+`configs/grid.yaml` — cada rua com **nome, classe e movimento**:
+
+```yaml
+grid:
+  rows:                                   # ruas leste-oeste, norte -> sul
+    - {name: "Rua Harmonia", class: local,   flow_vph: 250}
+    - {name: "Av. Paulista", class: avenida, flow_vph: 1100}   # <- a movimentada
+    - {name: "Rua Wisard",   class: local,   flow_vph: 200}
+  cols:                                   # ruas norte-sul, oeste -> leste
+    - {name: "Rua Girassol",   class: local,   flow_vph: 220}
+    - {name: "Av. Rebouças",   class: avenida, flow_vph: 900}
+    - {name: "Rua Aspicuelta", class: local,   flow_vph: 260}
+```
+
+`class: avenida` = 3 faixas/sentido a 60 km/h; `local` = 1 faixa a 40 km/h.
+`flow_vph` é quantos veículos/hora entram por cada ponta da rua — as ruas
+mais movimentadas são simplesmente as de maior fluxo. Os veículos viram nos
+cruzamentos pelas frações de `turn_shares` (70/15/15 por padrão), então o
+tráfego se espalha pela malha como numa cidade real.
+
+**Importante:** o agente NÃO recebe a lista de ruas movimentadas. Cada
+cruzamento observa apenas suas filas locais (obs_minimal) e uma única rede
+DQN — compartilhada por todos os cruzamentos (*parameter sharing*) — precisa
+aprender sozinha a dar prioridade a quem tem demanda. Os fluxos declarados
+só são usados pela simulação (para gerar o tráfego) e pelo baseline
+`fixo_proporcional` (que continua "injusto a favor" por conhecê-los).
+
+```bash
+traffic-rl grid-train --smoke        # valida o treino do grid em ~1 min
+traffic-rl grid-train                # 5 seeds × 300k transições
+traffic-rl grid-compare              # baselines + DQN -> results/grid/REPORT.md
+traffic-rl grid-train --grid meu_bairro.yaml   # o SEU grid
+```
+
+Segurança idêntica à Fase 1, POR cruzamento (verde mín/máx, amarelo 3 s,
+all-red 2 s); baselines instanciados um por cruzamento; métricas e REPORT.md
+iguais, com a espera separada por avenidas × locais conforme as classes que
+você declarou. Detalhes de projeto: ADR-013 a ADR-016 em docs/DECISOES.md.
+
+Tempo de referência (8 núcleos): treino do grid 3×3 ≈ 45–60 min/seed
+(~300k transições ÷ 9 cruzamentos ≈ 33k decisões); avaliação completa ≈ 1 h.
+
 ## Roadmap
 
-- **Fase 2**: grid NxM multi-agente (uma instância de `Controller` por
-  cruzamento; o gerador de rede paramétrico desta fase vira gerador de grid).
-- **Fase 3**: hierarquia viária explícita (arteriais vs locais) e coordenação.
+- **Fase 2** (entregue nesta versão): grid NxM multi-agente com hierarquia
+  declarada por YAML e política DQN compartilhada.
+- **Fase 3**: hierarquia viária explícita na observação/recompensa e
+  coordenação entre cruzamentos (onda verde emergente).
 - **Fase 4**: malha real de bairro de SP via OpenStreetMap; calibração com
   contagens reais.

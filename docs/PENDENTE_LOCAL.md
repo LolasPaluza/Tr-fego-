@@ -14,6 +14,16 @@ Este arquivo lista o que só pode ser feito/verificado localmente.
    `fixo_igual` no `pico_assimetrico` com p (Bonferroni) < 0,05; reportar
    honestamente o resultado contra `atuado_gap` e `max_pressure`.
 
+## Fase 2 — grid (comandos no README §Fase 2)
+
+1. Edite `configs/grid.yaml` com as SUAS ruas (nomes, classes, fluxos) —
+   ou crie um YAML próprio e passe com `--grid`.
+2. `traffic-rl grid-train --smoke && traffic-rl grid-compare --smoke` (~2 min)
+3. `bash scripts/run_grid_full.sh` (~45–60 min/seed de treino + ~1 h de
+   comparação) → `results/grid/REPORT.md`
+4. Visual: `netedit data/generated/grid.net.xml` — conferir a malha, faixas
+   por classe de rua e conexões de conversão em cada cruzamento.
+
 ## Verificações visuais (exigem sumo-gui/netedit)
 
 Instale a GUI localmente (`pip install eclipse-sumo` já a inclui como

@@ -15,6 +15,7 @@ Métricas por episódio (spec Parte 4):
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -50,6 +51,7 @@ def parse_tripinfo(
     episode: int,
     traffic_seed: int,
     fila_maxima: float,
+    classifier: Callable[[str], str] = road_class_of_vehicle,
 ) -> EpisodeMetrics:
     root = ET.parse(str(tripinfo_path)).getroot()
     waits: list[float] = []
@@ -60,7 +62,7 @@ def parse_tripinfo(
         veh_id = trip.get("id", "")
         wait = float(trip.get("waitingTime", 0.0))
         waits.append(wait)
-        waits_by_class[road_class_of_vehicle(veh_id)].append(wait)
+        waits_by_class[classifier(veh_id)].append(wait)
         arrival = float(trip.get("arrival", -1.0))
         if arrival >= 0:
             throughput += 1
