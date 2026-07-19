@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Instalar torch só-CPU (evita ~3 GB de libs CUDA no runner)
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Instalar projeto
+        run: pip install -e ".[dev]"
+      - name: Lint (ruff)
+        run: ruff check src/ tests/
+      - name: Testes (pytest + cobertura)
+        run: pytest -q --cov=src/traffic_rl --cov-fail-under=70
