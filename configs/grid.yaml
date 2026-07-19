@@ -48,7 +48,10 @@ env:
 train:
   scenario: grid           # informativo; o cenário do grid é este próprio arquivo
   seeds: [42, 123, 7, 2024, 777]
-  total_timesteps: 300000
+  # 600k transições ÷ 9 cruzamentos ≈ 67k decisões ≈ 93 episódios de
+  # experiência por cruzamento — o dobro do orçamento da Fase 1 porque o
+  # problema multi-cruzamento é mais difícil (interação entre semáforos).
+  total_timesteps: 600000
   eval_freq: 10000
   n_eval_episodes: 1       # 1 simulação de avaliação = 1 episódio POR cruzamento
   checkpoint_freq: 25000

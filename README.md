@@ -293,7 +293,7 @@ só são usados pela simulação (para gerar o tráfego) e pelo baseline
 
 ```bash
 traffic-rl grid-train --smoke        # valida o treino do grid em ~1 min
-traffic-rl grid-train                # 5 seeds × 300k transições
+traffic-rl grid-train                # 5 seeds × 600k transições
 traffic-rl grid-compare              # baselines + DQN -> results/grid/REPORT.md
 traffic-rl grid-train --grid meu_bairro.yaml   # o SEU grid
 ```
@@ -303,8 +303,11 @@ all-red 2 s); baselines instanciados um por cruzamento; métricas e REPORT.md
 iguais, com a espera separada por avenidas × locais conforme as classes que
 você declarou. Detalhes de projeto: ADR-013 a ADR-016 em docs/DECISOES.md.
 
-Tempo de referência (8 núcleos): treino do grid 3×3 ≈ 45–60 min/seed
-(~300k transições ÷ 9 cruzamentos ≈ 33k decisões); avaliação completa ≈ 1 h.
+Tempo de referência (8 núcleos): treino do grid 3×3 ≈ 1,5–2 h/seed
+(600k transições ÷ 9 cruzamentos ≈ 67k decisões ≈ 93 episódios por
+cruzamento — orçamento dobrado vs Fase 1 porque o problema multi-cruzamento
+é mais difícil); 5 seeds ≈ 8–10 h sequencial (rode durante a noite;
+retomável por checkpoint). Avaliação completa ≈ 1 h.
 
 ## Roadmap
 
