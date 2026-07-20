@@ -24,6 +24,36 @@ Este arquivo lista o que só pode ser feito/verificado localmente.
 4. Visual: `netedit data/generated/grid.net.xml` — conferir a malha, faixas
    por classe de rua e conexões de conversão em cada cruzamento.
 
+## Fase 4 — malha real (OSM): como extrair o recorte de SP
+
+A rede do sandbox cloud bloqueia os servidores do OpenStreetMap; a extração
+do recorte real é o único passo que PRECISA da sua máquina. Duas opções:
+
+1. **osmWebWizard (mais fácil, com mapa visual):**
+   ```bash
+   source .venv/bin/activate
+   python "$(python -c 'import sumo, pathlib; print(pathlib.Path(sumo.__file__).parent)')"/tools/osmWebWizard.py
+   ```
+   Abre o navegador: desenhe o retângulo (ex.: região da Paulista ou
+   Pinheiros), gere, e copie o `osm_bbox.osm.xml` para `data/osm/recorte.osm`.
+
+2. **Overpass direto (linha de comando):** bbox da região da Paulista:
+   ```bash
+   mkdir -p data/osm && curl -o data/osm/paulista.osm \
+     "https://overpass-api.de/api/map?bbox=-46.6660,-23.5720,-46.6480,-23.5560"
+   ```
+
+Depois, validar o pipeline no recorte real:
+   ```bash
+   python scripts/osm_prepare.py --osm data/osm/paulista.osm --vph 3000
+   ```
+   O script lista quantos cruzamentos semaforizados são controláveis pelo
+   modelo de 4 estágios e roda um episódio de sanidade (max-pressure).
+
+Próximos degraus da Fase 4 (documentados no ADR-019): matriz OD do Metrô
+(microdados públicos) no lugar do randomTrips, calibração contra contagens
+CET/radares abertos, treino/comparação na malha real.
+
 ## Verificações visuais (exigem sumo-gui/netedit)
 
 Instale a GUI localmente (`pip install eclipse-sumo` já a inclui como

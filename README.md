@@ -315,11 +315,29 @@ cruzamento — orçamento dobrado vs Fase 1 porque o problema multi-cruzamento
 é mais difícil); 5 seeds ≈ 8–10 h sequencial (rode durante a noite;
 retomável por checkpoint). Avaliação completa ≈ 1 h.
 
+## Fase 4 (MVP) — malha real via OpenStreetMap
+
+O pipeline OSM está implementado e testado: `import_osm` converte um recorte
+.osm em rede SUMO; `discover_controllable_tls` identifica os cruzamentos que
+o modelo de 4 estágios controla (os irregulares ficam com o programa default
+— limitação explícita, ADR-019); `OsmTrafficEnv` roda a malha real com a
+mesma segurança das fases anteriores; a demanda provisória usa randomTrips
+até a matriz OD do Metrô entrar (roteiro no ADR-019).
+
+```bash
+# extrair o recorte real (na sua máquina — ver docs/PENDENTE_LOCAL.md §Fase 4)
+curl -o data/osm/paulista.osm \
+  "https://overpass-api.de/api/map?bbox=-46.6660,-23.5720,-46.6480,-23.5560"
+python scripts/osm_prepare.py --osm data/osm/paulista.osm --vph 3000
+```
+
 ## Roadmap
 
-- **Fase 2** (entregue nesta versão): grid NxM multi-agente com hierarquia
-  declarada por YAML e política DQN compartilhada.
-- **Fase 3**: hierarquia viária explícita na observação/recompensa e
-  coordenação entre cruzamentos (onda verde emergente).
-- **Fase 4**: malha real de bairro de SP via OpenStreetMap; calibração com
-  contagens reais.
+- **Fase 2** (entregue): grid NxM multi-agente com hierarquia declarada por
+  YAML e política DQN compartilhada; variante com dados reais
+  (`grid_paulista_real.yaml`, ADR-018).
+- **Fase 3**: coordenação entre cruzamentos (onda verde emergente) e
+  observação com vizinhança.
+- **Fase 4** (MVP entregue; em evolução): malha real OSM — próximo degrau é
+  demanda OD do Metrô calibrada com contagens CET/radares e treino completo
+  na malha real (ADR-019).

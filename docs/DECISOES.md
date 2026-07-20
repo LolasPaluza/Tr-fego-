@@ -184,6 +184,27 @@ As PROPORÇÕES entre vias são o dado real preservado. **Consequências:**
 realismo honesto e auditável hoje; as estimativas viram contagens reais na
 Fase 4 (MSVP/CET completo + OSM), trocando números num único arquivo.
 
+## ADR-019 — Fase 4 MVP: pipeline OSM com controle parcial e demanda provisória
+
+**Contexto:** levar o sistema à malha real exige resolver três problemas de
+uma vez (geometria irregular, semáforos arbitrários, demanda realista) —
+grande demais para um passo só. **Decisão:** MVP em camadas:
+(1) importação OSM→SUMO paramétrica (`import_osm`), testada com fixture em
+formato OSM real (o recorte verdadeiro de SP é extraído na máquina local —
+Overpass/osmWebWizard bloqueados no sandbox);
+(2) o agente controla APENAS os cruzamentos mapeáveis ao modelo de 4
+estágios (4 aproximações em cruz, detectadas por geometria); os demais ficam
+com o programa default do netconvert — controle de junções irregulares
+(3/5+ vias, estágios variáveis) é trabalho futuro explícito;
+(3) demanda provisória via randomTrips (volume configurável, determinística
+por seed) até a matriz OD do Metrô entrar, calibrada por contagens
+CET/radares.
+`OsmTrafficEnv` herda a máquina de segurança inteira do env de grid (mesmo
+verde mín/máx, amarelo, all-red, retries). **Consequências:** a Fase 4 fica
+incremental e auditável; a limitação "controle parcial" é visível
+(`osm_prepare.py` lista quantos cruzamentos são controláveis) em vez de
+escondida atrás de um modelo de fases genérico e frágil.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

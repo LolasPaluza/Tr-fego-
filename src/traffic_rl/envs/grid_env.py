@@ -161,10 +161,15 @@ class GridTrafficEnv:
 
     # ------------------------------------------------------------------ sumo
 
-    def _start_sumo(self, traffic_seed: int) -> None:
-        route_file = build_grid_routes(
+    def _route_file_for(self, traffic_seed: int) -> Path:
+        """Gera/retorna o .rou.xml do episódio — ponto de extensão da Fase 4
+        (o ambiente OSM sobrescreve com demanda sobre a malha real)."""
+        return build_grid_routes(
             self.cfg.grid, generated_dir(), traffic_seed, self.cfg.env.episode_length_s
         )
+
+    def _start_sumo(self, traffic_seed: int) -> None:
+        route_file = self._route_file_for(traffic_seed)
         cmd = [
             sumo_binary(),
             "-n", str(self.net_file),
