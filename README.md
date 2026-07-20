@@ -303,6 +303,12 @@ all-red 2 s); baselines instanciados um por cruzamento; métricas e REPORT.md
 iguais, com a espera separada por avenidas × locais conforme as classes que
 você declarou. Detalhes de projeto: ADR-013 a ADR-016 em docs/DECISOES.md.
 
+**Grid com dados reais:** `configs/grid_paulista_real.yaml` traz a região da
+Paulista com demanda ancorada em números públicos (volume diário medido da
+Paulista + composição de frota da CET/MSVP 2019), estimativas marcadas e
+escala documentada — ver ADR-018. Use com
+`traffic-rl grid-train --grid configs/grid_paulista_real.yaml`.
+
 Tempo de referência (8 núcleos): treino do grid 3×3 ≈ 1,5–2 h/seed
 (600k transições ÷ 9 cruzamentos ≈ 67k decisões ≈ 93 episódios por
 cruzamento — orçamento dobrado vs Fase 1 porque o problema multi-cruzamento

@@ -1,0 +1,79 @@
+# Grid 3×3 da região da Av. Paulista com DEMANDA ANCORADA EM DADOS REAIS.
+#
+# ============================== FONTES ======================================
+# MEDIDO (fontes públicas):
+# - Av. Paulista: ~82.000 veículos/dia (Prefeitura de SP / Associação Paulista
+#   Viva; outras fontes citam ~90 mil). Pico horário estimado pela regra de
+#   engenharia K≈8% do volume diário: ~3.280 veíc/h por sentido.
+# - Composição da frota (CET, Pesquisa Mobilidade no Sistema Viário Principal
+#   2019): autos 79,1%, motos 15,7%, caminhões 1,4%, ônibus ~3,0%, bikes 0,8%
+#   → pesados (caminhões+ônibus) ≈ 4,4%, arredondado em truck_share.
+#
+# ESTIMADO (sem contagem pública acessível; ordem de grandeza por hierarquia
+# viária — marcar com contagens reais da CET quando obtidas, Fase 4):
+# - Av. Brigadeiro Luís Antônio: arterial que cruza a Paulista; ~60% dela.
+# - Alamedas Santos e Jaú: coletoras paralelas; ~15% da Paulista.
+# - R. Augusta e R. Haddock Lobo: locais de travessia; ~12-15% da Paulista.
+#
+# ESCALA: as PROPORÇÕES entre as vias são o dado real que este arquivo
+# preserva. Os valores absolutos são reduzidos por um fator global ~0,17
+# (Paulista real ~3.280 veíc/h/sentido → 550 na simulação) porque a malha
+# simulada é uma abstração (3 faixas simples, sem faixa de ônibus, quadras
+# uniformes) com capacidade menor que o corredor real — sem a redução, TODOS
+# os métodos afogam e a comparação perde sentido (ver ADR-017/018).
+#
+# SIMPLIFICAÇÕES ASSUMIDAS: mão dupla em todas as vias (Augusta, Haddock
+# Lobo e as Alamedas são mão única na realidade); geometria em grade
+# uniforme; sem ônibus/pedestres. A malha fiel vem na Fase 4 (OSM).
+# ============================================================================
+
+grid:
+  rows:                                    # norte -> sul (abstração)
+    - {name: "Alameda Santos",   class: local,   flow_vph: 85}    # ~15% Paulista (estimado)
+    - {name: "Av. Paulista",     class: avenida, flow_vph: 550}   # 82k/dia medido, escalado
+    - {name: "Alameda Jaú",      class: local,   flow_vph: 80}    # estimado
+  cols:                                    # oeste -> leste
+    - {name: "R. Haddock Lobo",  class: local,   flow_vph: 70}    # estimado
+    - {name: "R. Augusta",       class: local,   flow_vph: 85}    # estimado
+    - {name: "Av. Brig. Luís Antônio", class: avenida, flow_vph: 330}  # ~60% Paulista (estimado)
+  block_length_m: 300.0
+  boundary_length_m: 300.0
+  turn_shares: {straight: 0.84, right: 0.10, left: 0.06}
+  truck_share_avenida: 0.045   # caminhões+ônibus, MSVP 2019 (medido)
+  truck_share_local: 0.02
+
+env:
+  signal: {min_green_s: 10.0, max_green_s: 120.0, yellow_s: 3.0, all_red_s: 2.0}
+  episode_length_s: 3600.0
+  delta_time_s: 5.0
+  reward_mode: r_espera
+  starvation: {enabled: true, threshold_s: 120.0, penalty: 1.0}
+  use_libsumo: true
+
+train:
+  scenario: grid_paulista_real
+  seeds: [42, 123, 7, 2024, 777]
+  total_timesteps: 600000
+  eval_freq: 10000
+  n_eval_episodes: 1
+  checkpoint_freq: 25000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn:
+    learning_rate: 0.0005
+    buffer_size: 100000
+    learning_starts: 2000
+    batch_size: 64
+    gamma: 0.99
+    train_freq: 1
+    target_update_interval: 1000
+    exploration_fraction: 0.3
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.02
+    net_arch: [256, 256]
+    double_dqn: true
+
+eval:
+  n_episodes: 20
+  traffic_seed_base: 10000
+  scenarios: [grid_paulista_real]

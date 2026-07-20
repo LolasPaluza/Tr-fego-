@@ -166,6 +166,24 @@ fenômeno de saturação continua acessível (basta subir os fluxos), mas o
 default conta uma história comparável; a super-saturação vira experimento
 consciente, não armadilha.
 
+## ADR-018 — Grid ancorado em dados reais (grid_paulista_real.yaml)
+
+**Contexto:** o usuário quer aproximar a simulação do trânsito real de SP
+antes da Fase 4. Dados de demanda por via são escassos publicamente: o
+volume diário da Av. Paulista (~82 mil veíc/dia, Prefeitura/Associação
+Paulista Viva) e a composição da frota (CET MSVP 2019: pesados ≈ 4,4%) são
+verificáveis; as contagens por transversal (Augusta, Haddock Lobo, Alamedas,
+Brigadeiro) não foram acessíveis (PDFs da CET bloqueados pela rede do
+sandbox). Waze fornece ESTADO (velocidades/lentidão), não DEMANDA
+(veíc/h) — não substitui contagem. **Decisão:** criar
+`configs/grid_paulista_real.yaml` com (a) valores medidos citados, (b)
+estimativas por hierarquia viária claramente marcadas como estimativas, e
+(c) escala global ~0,17 documentada (a malha 3×3 abstrata tem capacidade
+menor que o corredor real; sem a escala, todos os métodos afogam — ADR-017).
+As PROPORÇÕES entre vias são o dado real preservado. **Consequências:**
+realismo honesto e auditável hoje; as estimativas viram contagens reais na
+Fase 4 (MSVP/CET completo + OSM), trocando números num único arquivo.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

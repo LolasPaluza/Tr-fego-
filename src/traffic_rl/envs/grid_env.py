@@ -16,6 +16,7 @@ transição enquanto os demais seguem verdes — decisões continuam síncronas.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -279,6 +280,22 @@ class GridTrafficEnv:
     # ---------------------------------------------------------------- api
 
     def reset(self, traffic_seed: int) -> tuple[list[Observation], dict]:
+        # O SUMO externo (modo TraCI) pode morrer sob carga concorrente logo
+        # após conectar; o reinício de episódio é idempotente, então tentar de
+        # novo é seguro e resolve falhas transitórias.
+        last_error: Exception | None = None
+        for attempt in range(3):
+            try:
+                return self._reset_once(traffic_seed)
+            except Exception as e:  # traci.FatalTraCIError e afins
+                last_error = e
+                self.close()
+                time.sleep(2.0 * (attempt + 1))
+        raise RuntimeError(
+            f"reset do grid falhou após 3 tentativas (seed {traffic_seed})"
+        ) from last_error
+
+    def _reset_once(self, traffic_seed: int) -> tuple[list[Observation], dict]:
         self.close()
         self._start_sumo(traffic_seed)
         self._episode_max_queue = 0.0
