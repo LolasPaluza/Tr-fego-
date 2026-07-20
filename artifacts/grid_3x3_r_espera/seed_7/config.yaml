@@ -1,0 +1,77 @@
+grid:
+  rows:
+  - name: Rua Harmonia
+    street_class: local
+    flow_vph: 130.0
+  - name: Av. Paulista
+    street_class: avenida
+    flow_vph: 550.0
+  - name: Rua Wisard
+    street_class: local
+    flow_vph: 120.0
+  cols:
+  - name: Rua Girassol
+    street_class: local
+    flow_vph: 120.0
+  - name: Av. Rebouças
+    street_class: avenida
+    flow_vph: 450.0
+  - name: Rua Aspicuelta
+    street_class: local
+    flow_vph: 150.0
+  block_length_m: 300.0
+  boundary_length_m: 300.0
+  turn_shares:
+    straight: 0.84
+    right: 0.1
+    left: 0.06
+  truck_share_avenida: 0.1
+  truck_share_local: 0.0
+env:
+  signal:
+    min_green_s: 10.0
+    max_green_s: 120.0
+    yellow_s: 3.0
+    all_red_s: 2.0
+  episode_length_s: 3600.0
+  delta_time_s: 5.0
+  reward_mode: r_espera
+  starvation:
+    enabled: true
+    threshold_s: 120.0
+    penalty: 1.0
+  use_libsumo: true
+train:
+  scenario: grid
+  seeds:
+  - 42
+  - 123
+  - 7
+  - 2024
+  - 777
+  total_timesteps: 600000
+  eval_freq: 10000
+  n_eval_episodes: 1
+  checkpoint_freq: 25000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn:
+    learning_rate: 0.0005
+    buffer_size: 100000
+    learning_starts: 2000
+    batch_size: 64
+    gamma: 0.99
+    train_freq: 1
+    target_update_interval: 1000
+    exploration_fraction: 0.3
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.02
+    net_arch:
+    - 256
+    - 256
+    double_dqn: true
+eval:
+  n_episodes: 20
+  traffic_seed_base: 10000
+  scenarios:
+  - grid
