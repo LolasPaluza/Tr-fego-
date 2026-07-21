@@ -100,12 +100,21 @@ cruzando ruas locais); há também uma variante ancorada em dados reais da CET
 | Atuado (gap) | 269 | **DQN vence −13% (p=0,002)** |
 | Max-pressure | 520 | **DQN vence −55% (p=0,0001)** |
 
-**Interpretação:** na malha, o DQN **supera os dois controladores clássicos
-fortes** (atuado e max-pressure) com significância, e **empata** com o fixo
-proporcional no teste de ranks. Perde para o fixo igual. O limitante é a
-**alta variância entre seeds** (IC da espera [187, 284]): algumas seeds
+**Interpretação:** na malha, o DQN **supera os dois controladores adaptativos
+clássicos** (atuado e max-pressure) com significância. Os dois de tempo fixo,
+porém, ainda levam vantagem na espera média — inclusive o "burro" fixo igual
+(174 s vs 235 s). É um resultado instrutivo: numa malha carregada, o ritmo
+regular e previsível do tempo fixo evita a instabilidade que agentes
+independentes criam quando um atrapalha o outro. O limitante do DQN é a **alta
+variância entre execuções** (IC da espera [187, 284]): algumas seeds
 coordenam-se emergentemente, outras não — porque cada agente decide sozinho,
 sem enxergar os vizinhos.
+
+> Nota estatística: no teste de Mann-Whitney (ranks), a diferença DQN vs fixo
+> proporcional não é significativa apesar da diferença de médias — a
+> distribuição do DQN é assimétrica (mediana competitiva, alguns episódios
+> ruins puxam a média). Na métrica que importa para o motorista — a espera
+> média — os dois de tempo fixo ficam à frente.
 
 Esse é o argumento de abertura da **Fase 3**: dar a cada agente informação da
 vizinhança para emergir a "onda verde" e estabilizar a variância.

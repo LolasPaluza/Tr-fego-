@@ -190,11 +190,12 @@
     </div>
     <div class="verdict warn">
       <div class="signal" aria-hidden="true"><i class="s-amber on"></i></div>
-      <p style="margin:0"><span class="k">O achado honesto:</span> nos cenários em que <em>não</em>
-        treinou, o DQN perde para o tempo fixo — ele se especializou no padrão que viu
-        ("a avenida é a movimentada"). Não é um defeito escondido: o cenário de demanda invertida
-        foi <b>projetado para detectar exatamente isso</b>, e o resultado motiva o próximo experimento
-        (treino multi-cenário).</p>
+      <p style="margin:0"><span class="k">O achado honesto:</span> o agente treinou só no pico da
+        avenida e criou um hábito — <em>"a avenida é a movimentada, priorize-a"</em>. Quando a demanda
+        inverte e é a rua local que enche, ele teima na avenida e fica atrás até do semáforo de tempo
+        fixo. Isso não é uma falha escondida: construímos o cenário de demanda invertida <b>justamente
+        para flagrar esse tipo de vício</b>. O resultado aponta o próximo passo — treinar com os quatro
+        cenários misturados, para o agente aprender a se adaptar em vez de decorar.</p>
     </div>
   </div>
 </section>
@@ -208,7 +209,7 @@
       ancora a demanda em dados públicos da CET.</p>
     <div class="chart">
       <h4>Tempo médio de espera na malha <span class="mono" style="color:var(--muted);font-size:.8rem">— menor é melhor</span></h4>
-      <p class="cap">O DQN vence os dois controladores clássicos fortes; empata (em ranks) com o proporcional; perde para o fixo igual.</p>
+      <p class="cap">O DQN supera os dois controladores adaptativos clássicos (atuado e max-pressure). Os dois semáforos de tempo fixo, porém, ainda levam vantagem na espera média — a variação entre execuções é o motivo.</p>
       <div class="bars">
         <div class="bar-row"><div class="lab">Fixo proporcional*</div><div class="track"><div class="fill win" style="width:19%">99 s</div></div></div>
         <div class="bar-row"><div class="lab">Fixo igual</div><div class="track"><div class="fill neutral" style="width:33%">174 s</div></div></div>
