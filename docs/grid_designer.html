@@ -1,0 +1,332 @@
+<title>Monte seu grid — TrafficRL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ground: #f3f5f2; --panel: #ffffff; --ink: #14171d; --muted: #5c6470;
+    --hair: #dfe4dd; --go: #14904e; --go-soft: #e4f2e9; --amber: #c9821f;
+    --stop: #c6413a; --asphalt: #1c2029; --field: #f7f9f6;
+    --shadow: 0 1px 2px rgba(20,30,20,.06), 0 8px 24px rgba(20,30,20,.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --ground:#101318; --panel:#181c23; --ink:#e9ede8; --muted:#9aa3ad;
+      --hair:#2a2f39; --go:#3fbb74; --go-soft:#17301f; --amber:#d9a24a; --stop:#e0655d;
+      --asphalt:#0b0d12; --field:#12151b; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); }
+  }
+  :root[data-theme="dark"] { --ground:#101318; --panel:#181c23; --ink:#e9ede8; --muted:#9aa3ad;
+    --hair:#2a2f39; --go:#3fbb74; --go-soft:#17301f; --amber:#d9a24a; --stop:#e0655d;
+    --asphalt:#0b0d12; --field:#12151b; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); }
+  :root[data-theme="light"] { --ground:#f3f5f2; --panel:#ffffff; --ink:#14171d; --muted:#5c6470;
+    --hair:#dfe4dd; --go:#14904e; --go-soft:#e4f2e9; --amber:#c9821f; --stop:#c6413a;
+    --asphalt:#1c2029; --field:#f7f9f6; --shadow:0 1px 2px rgba(20,30,20,.06),0 8px 24px rgba(20,30,20,.07); }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55; -webkit-font-smoothing:antialiased; }
+  .mono { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
+  header { background:var(--asphalt); color:#eef1ee; padding:1.6rem 1.5rem; position:relative; overflow:hidden; }
+  header::before { content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
+    background-size:28px 28px; mask-image:radial-gradient(120% 120% at 90% 0%,#000 20%,transparent 70%); }
+  header .in { position:relative; max-width:74rem; margin:0 auto; }
+  header .eyebrow { font-size:.7rem; letter-spacing:.18em; text-transform:uppercase; color:#9fb6a6; margin:0 0 .3rem; }
+  header h1 { margin:0; font-size:clamp(1.5rem,4vw,2rem); letter-spacing:-.02em; }
+  header p { margin:.4rem 0 0; color:#c9d3cb; max-width:46rem; font-size:.95rem; }
+  header .sig { display:inline-flex; gap:.4rem; margin-left:.3rem; vertical-align:middle; }
+  header .sig i { width:.55rem; height:.55rem; border-radius:50%; display:inline-block; }
+  .layout { max-width:74rem; margin:0 auto; padding:1.5rem; display:grid;
+    grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+  @media (max-width:52rem){ .layout { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--hair); border-radius:.8rem;
+    box-shadow:var(--shadow); padding:1.2rem 1.3rem; }
+  .card h2 { margin:0 0 .2rem; font-size:1.05rem; }
+  .card .sub { margin:0 0 1rem; color:var(--muted); font-size:.85rem; }
+  .sizerow { display:flex; gap:1.2rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+  .sizerow label { font-size:.82rem; color:var(--muted); display:flex; flex-direction:column; gap:.3rem; }
+  select, input[type=text], input[type=number] { font:inherit; color:var(--ink); background:var(--field);
+    border:1px solid var(--hair); border-radius:.45rem; padding:.4rem .55rem; }
+  input[type=number] { width:6rem; font-variant-numeric:tabular-nums; }
+  input:focus, select:focus { outline:2px solid var(--go); outline-offset:1px; }
+  .streets { display:grid; gap:.5rem; }
+  .street-group-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--muted); margin:.8rem 0 .1rem; }
+  .street { display:grid; grid-template-columns:1fr 6.5rem 6.5rem; gap:.5rem; align-items:center; }
+  .street input[type=text] { width:100%; }
+  .street select, .street input[type=number] { width:100%; }
+  .street .flowbox { position:relative; }
+  .tag-av { color:var(--go); font-weight:600; }
+  .warn { margin-top:1rem; padding:.7rem .9rem; border-radius:.5rem; font-size:.85rem;
+    background:color-mix(in srgb,var(--amber) 15%,var(--panel)); border:1px solid color-mix(in srgb,var(--amber) 40%,var(--panel)); }
+  .ok { background:var(--go-soft); border:1px solid color-mix(in srgb,var(--go) 35%,var(--panel)); }
+  svg { width:100%; height:auto; display:block; background:var(--field); border-radius:.6rem; }
+  .maplegend { display:flex; gap:1.1rem; flex-wrap:wrap; font-size:.78rem; color:var(--muted); margin-top:.7rem; }
+  .maplegend span { display:inline-flex; align-items:center; gap:.4rem; }
+  .sw { width:1.1rem; height:.35rem; border-radius:2px; display:inline-block; }
+  pre { background:var(--asphalt); color:#dbe4dc; border-radius:.6rem; padding:1rem 1.1rem;
+    overflow-x:auto; font-size:.82rem; line-height:1.5; margin:0; }
+  .cmd { background:var(--field); border:1px solid var(--hair); border-radius:.5rem;
+    padding:.6rem .8rem; font-size:.82rem; margin:.5rem 0; overflow-x:auto; }
+  .btn { font:inherit; font-weight:600; font-size:.85rem; cursor:pointer; border:none; border-radius:.5rem;
+    padding:.55rem .9rem; background:var(--go); color:#fff; }
+  .btn.ghost { background:transparent; color:var(--go); border:1px solid color-mix(in srgb,var(--go) 45%,var(--panel)); }
+  .row-between { display:flex; justify-content:space-between; align-items:center; gap:.5rem; margin-bottom:.6rem; flex-wrap:wrap; }
+  .stat { font-size:.82rem; color:var(--muted); }
+  .stat b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  footer { max-width:74rem; margin:0 auto; padding:0 1.5rem 3rem; color:var(--muted); font-size:.82rem; }
+  code { font-family:ui-monospace,Menlo,monospace; background:color-mix(in srgb,var(--hair) 50%,transparent);
+    padding:.05rem .3rem; border-radius:.3rem; font-size:.9em; }
+</style>
+
+<header>
+  <div class="in">
+    <p class="eyebrow">TrafficRL · monte seu grid</p>
+    <h1>Desenhe suas ruas, a IA aprende os semáforos
+      <span class="sig"><i style="background:var(--stop)"></i><i style="background:var(--amber)"></i><i style="background:var(--go)"></i></span>
+    </h1>
+    <p>Configure uma malha do seu jeito — quantas ruas, quais são avenidas, quanto trânsito em cada uma.
+      A página monta o arquivo de configuração e os comandos; a IA treina os semáforos e compara com os
+      controladores clássicos. Nada aqui é enviado a lugar nenhum: tudo roda no seu navegador.</p>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="card" id="editor">
+    <h2>1 · Suas ruas</h2>
+    <p class="sub">Fluxo em veículos/hora por sentido. Números maiores = ruas mais movimentadas.</p>
+    <div class="sizerow">
+      <label>Ruas horizontais (↔)
+        <select id="nrows"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+      </label>
+      <label>Ruas verticais (↕)
+        <select id="ncols"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+      </label>
+    </div>
+    <div class="street-group-label">Ruas horizontais — de cima para baixo</div>
+    <div class="streets" id="rows"></div>
+    <div class="street-group-label">Ruas verticais — da esquerda para a direita</div>
+    <div class="streets" id="cols"></div>
+    <div id="advice"></div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom:1.5rem">
+      <h2>2 · Seu grid</h2>
+      <p class="sub">Avenidas em verde e mais grossas (3 faixas); ruas locais em cinza (1 faixa). Quadrados = semáforos.</p>
+      <svg id="map" viewBox="0 0 400 400" role="img" aria-label="Prévia do grid"></svg>
+      <div class="maplegend">
+        <span><i class="sw" style="background:var(--go);height:.5rem"></i> avenida</span>
+        <span><i class="sw" style="background:var(--muted)"></i> rua local</span>
+        <span>espessura ∝ fluxo</span>
+      </div>
+      <div class="stat" style="margin-top:.7rem" id="summary"></div>
+    </div>
+
+    <div class="card">
+      <div class="row-between">
+        <h2 style="margin:0">3 · Rode a IA</h2>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn ghost" id="copyyaml">Copiar YAML</button>
+          <button class="btn ghost" id="copycmd">Copiar comandos</button>
+        </div>
+      </div>
+      <p class="sub">Salve o YAML como <code>configs/meu_grid.yaml</code> e rode o comando. A IA treina e
+        entrega o relatório comparando com os semáforos clássicos.</p>
+      <pre id="yaml"></pre>
+      <div class="street-group-label">Comandos (na sua máquina, no venv do projeto)</div>
+      <div class="cmd mono" id="cmds"></div>
+      <p class="sub" style="margin-top:.6rem">Teste rápido primeiro: acrescente <code>--smoke</code> para validar em minutos
+        antes do treino completo (que leva ~1–2 h por seed).</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Dica de capacidade: numa malha abstrata, avenidas acima de ~700 veíc/h ou muitas conversões podem
+  travar tudo — e aí nenhum método (nem a IA) tem o que fazer. Os avisos amarelos aparecem quando o
+  fluxo fica arriscado. Comece carregado porém viável e suba aos poucos.
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var CAP_LANE = 300 / 7.5; // ~40 veíc/faixa, mesma capacidade do simulador
+  var state = { rows: [], cols: [] };
+
+  function slug(s) {
+    return (s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "")) || "rua";
+  }
+  function defaultStreet(kind, i) {
+    var isAv = (i === 1); // 2ª rua vira avenida por padrão
+    return { name: (isAv ? "Avenida " : "Rua ") + (kind === "row" ? "H" : "V") + (i + 1),
+      cls: isAv ? "avenida" : "local", flow: isAv ? 550 : 130 };
+  }
+  function rebuild(list, kind, n) {
+    var out = [];
+    for (var i = 0; i < n; i++) out.push(list[i] || defaultStreet(kind, i));
+    return out;
+  }
+  function resize() {
+    state.rows = rebuild(state.rows, "row", +document.getElementById("nrows").value);
+    state.cols = rebuild(state.cols, "col", +document.getElementById("ncols").value);
+    renderEditor(); renderAll();
+  }
+  function streetRow(st, arr, idx) {
+    var wrap = document.createElement("div");
+    wrap.className = "street";
+    var name = document.createElement("input"); name.type = "text"; name.value = st.name;
+    name.setAttribute("aria-label", "nome da rua");
+    name.oninput = function () { st.name = name.value; renderAll(); };
+    var sel = document.createElement("select");
+    ["avenida", "local"].forEach(function (c) {
+      var o = document.createElement("option"); o.value = c;
+      o.textContent = c === "avenida" ? "avenida (3 faixas)" : "local (1 faixa)";
+      if (c === st.cls) o.selected = true; sel.appendChild(o);
+    });
+    sel.onchange = function () { st.cls = sel.value; if (sel.value === "avenida" && st.flow < 300) st.flow = 550; renderEditor(); renderAll(); };
+    var flow = document.createElement("input"); flow.type = "number"; flow.min = "0"; flow.step = "10";
+    flow.value = st.flow; flow.setAttribute("aria-label", "fluxo veículos por hora");
+    flow.oninput = function () { st.flow = Math.max(0, +flow.value || 0); renderAll(); };
+    wrap.appendChild(name); wrap.appendChild(sel); wrap.appendChild(flow);
+    return wrap;
+  }
+  function renderEditor() {
+    var r = document.getElementById("rows"); r.innerHTML = "";
+    state.rows.forEach(function (st, i) { r.appendChild(streetRow(st, state.rows, i)); });
+    var c = document.getElementById("cols"); c.innerHTML = "";
+    state.cols.forEach(function (st, i) { c.appendChild(streetRow(st, state.cols, i)); });
+  }
+
+  function lanes(st) { return st.cls === "avenida" ? 3 : 1; }
+
+  function renderMap() {
+    var R = state.rows.length, C = state.cols.length;
+    var W = 400, H = 400, pad = 46;
+    var xs = [], ys = [];
+    for (var j = 0; j < C; j++) xs.push(pad + (C === 1 ? (W - 2 * pad) / 2 : j * (W - 2 * pad) / (C - 1)));
+    for (var i = 0; i < R; i++) ys.push(pad + (R === 1 ? (H - 2 * pad) / 2 : i * (H - 2 * pad) / (R - 1)));
+    var maxFlow = 1;
+    state.rows.concat(state.cols).forEach(function (s) { maxFlow = Math.max(maxFlow, s.flow); });
+    function w(st) { return 2 + 6 * (st.flow / maxFlow) * (lanes(st) === 3 ? 1 : 0.6); }
+    var svg = ["<rect x='0' y='0' width='400' height='400' fill='transparent'/>"];
+    // horizontais
+    state.rows.forEach(function (st, i) {
+      var col = st.cls === "avenida" ? "var(--go)" : "var(--muted)";
+      svg.push("<line x1='" + (pad - 22) + "' y1='" + ys[i] + "' x2='" + (W - pad + 22) + "' y2='" + ys[i] +
+        "' stroke='" + col + "' stroke-width='" + w(st).toFixed(1) + "' stroke-linecap='round' opacity='0.9'/>");
+      svg.push("<text x='6' y='" + (ys[i] - 5) + "' font-size='9' fill='var(--muted)'>" + esc(st.name) + "</text>");
+    });
+    // verticais
+    state.cols.forEach(function (st, j) {
+      var col = st.cls === "avenida" ? "var(--go)" : "var(--muted)";
+      svg.push("<line x1='" + xs[j] + "' y1='" + (pad - 22) + "' x2='" + xs[j] + "' y2='" + (H - pad + 22) +
+        "' stroke='" + col + "' stroke-width='" + w(st).toFixed(1) + "' stroke-linecap='round' opacity='0.9'/>");
+      svg.push("<text x='" + (xs[j] + 4) + "' y='" + (pad - 26) + "' font-size='9' fill='var(--muted)' transform='rotate(90 " + (xs[j] + 4) + " " + (pad - 26) + ")'>" + esc(st.name) + "</text>");
+    });
+    // cruzamentos
+    for (var i2 = 0; i2 < R; i2++) for (var j2 = 0; j2 < C; j2++)
+      svg.push("<rect x='" + (xs[j2] - 4) + "' y='" + (ys[i2] - 4) + "' width='8' height='8' rx='1.5' fill='var(--ink)'/>");
+    document.getElementById("map").innerHTML = svg.join("");
+    document.getElementById("summary").innerHTML =
+      "<b>" + (R * C) + "</b> cruzamentos semaforizados · <b>" + R + "</b> ruas horizontais × <b>" + C + "</b> verticais";
+  }
+  function esc(s) { return s.replace(/[<>&]/g, function (c) { return { "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]; }); }
+
+  function advice() {
+    var busiest = 0, dup = {};
+    var all = state.rows.concat(state.cols);
+    all.forEach(function (s) {
+      if (s.cls === "avenida") busiest = Math.max(busiest, s.flow);
+      var k = slug(s.name); dup[k] = (dup[k] || 0) + 1;
+    });
+    var collide = Object.keys(dup).some(function (k) { return dup[k] > 1; });
+    var el = document.getElementById("advice");
+    if (collide) {
+      el.innerHTML = "<div class='warn'>Dois nomes de rua ficam iguais depois de simplificados — dê nomes distintos para o treino não confundir as origens.</div>";
+    } else if (busiest > 700) {
+      el.innerHTML = "<div class='warn'>Uma avenida com " + busiest + " veíc/h é bastante para uma malha abstrata — há risco de travar tudo. Considere ≤ 650 para uma comparação que faça sentido.</div>";
+    } else {
+      el.innerHTML = "<div class='warn ok'>Fluxos em faixa saudável — carregado porém viável. Bom para comparar a IA com os clássicos.</div>";
+    }
+  }
+
+  function toYaml() {
+    function block(list) {
+      return list.map(function (s) {
+        return "    - {name: \"" + s.name.replace(/"/g, "'") + "\", class: " + s.cls + ", flow_vph: " + Math.round(s.flow) + "}";
+      }).join("\n");
+    }
+    return [
+      "# Grid gerado pelo designer do TrafficRL.",
+      "grid:",
+      "  rows:", block(state.rows),
+      "  cols:", block(state.cols),
+      "  block_length_m: 300.0",
+      "  boundary_length_m: 300.0",
+      "  turn_shares: {straight: 0.84, right: 0.10, left: 0.06}",
+      "  truck_share_avenida: 0.05",
+      "  truck_share_local: 0.0",
+      "",
+      "env:",
+      "  signal: {min_green_s: 10.0, max_green_s: 120.0, yellow_s: 3.0, all_red_s: 2.0}",
+      "  episode_length_s: 3600.0",
+      "  delta_time_s: 5.0",
+      "  reward_mode: r_espera",
+      "  starvation: {enabled: true, threshold_s: 120.0, penalty: 1.0}",
+      "  use_libsumo: true",
+      "",
+      "train:",
+      "  scenario: grid",
+      "  seeds: [42, 123, 7, 2024, 777]",
+      "  total_timesteps: 600000",
+      "  eval_freq: 10000",
+      "  n_eval_episodes: 1",
+      "  checkpoint_freq: 25000",
+      "  early_stopping: false",
+      "  early_stopping_patience: 6",
+      "  dqn:",
+      "    learning_rate: 0.0005",
+      "    buffer_size: 100000",
+      "    learning_starts: 2000",
+      "    batch_size: 64",
+      "    gamma: 0.99",
+      "    train_freq: 1",
+      "    target_update_interval: 1000",
+      "    exploration_fraction: 0.3",
+      "    exploration_initial_eps: 1.0",
+      "    exploration_final_eps: 0.02",
+      "    net_arch: [256, 256]",
+      "    double_dqn: true",
+      "",
+      "eval:",
+      "  n_episodes: 20",
+      "  traffic_seed_base: 10000",
+      "  scenarios: [grid]",
+      ""
+    ].join("\n");
+  }
+  var CMDS =
+    "# 1) valide rápido (minutos):\n" +
+    "traffic-rl grid-run --grid configs/meu_grid.yaml --smoke\n\n" +
+    "# 2) rode de verdade (treina a IA + compara + relatório):\n" +
+    "traffic-rl grid-run --grid configs/meu_grid.yaml\n\n" +
+    "# resultado: results/grid/REPORT.md";
+
+  function renderAll() { renderMap(); advice();
+    document.getElementById("yaml").textContent = toYaml();
+    document.getElementById("cmds").textContent = CMDS;
+  }
+  function copy(text, btn) {
+    navigator.clipboard.writeText(text).then(function () {
+      var old = btn.textContent; btn.textContent = "Copiado ✓";
+      setTimeout(function () { btn.textContent = old; }, 1400);
+    }).catch(function () { btn.textContent = "Selecione e copie"; });
+  }
+
+  document.getElementById("nrows").onchange = resize;
+  document.getElementById("ncols").onchange = resize;
+  document.getElementById("copyyaml").onclick = function () { copy(toYaml(), this); };
+  document.getElementById("copycmd").onclick = function () { copy(CMDS, this); };
+  resize();
+})();
+</script>
