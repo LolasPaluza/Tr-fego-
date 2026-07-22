@@ -205,6 +205,22 @@ incremental e auditável; a limitação "controle parcial" é visível
 (`osm_prepare.py` lista quantos cruzamentos são controláveis) em vez de
 escondida atrás de um modelo de fases genérico e frágil.
 
+## ADR-020 — Treino generalista (multi-cenário) para corrigir a especialização
+
+**Contexto:** a Fase 1 mostrou que o DQN treinado só no `pico_assimetrico`
+especializa-se ("priorize a avenida") e perde para o tempo fixo quando a
+demanda inverte. A correção certa não é reescrever o texto do relatório, e sim
+treinar o agente nos aspectos onde ele falha. **Decisão:** treino generalista
+por domain randomization da demanda — a cada episódio, um dos 4 cenários é
+sorteado (round-robin), de modo que o agente não consiga decorar um padrão e
+seja forçado a aprender a regra geral "priorize quem tem fila". Roda sob tag
+própria (`dqn_generalista_*`), mesmo orçamento do especialista (5 seeds ×
+300k) para comparação justa. **Consequências:** experimento especialista ×
+generalista com hipótese clara (o generalista deve ser mais robusto nos
+cenários fora do treino, possivelmente ao custo de um pouco de desempenho no
+pico). O `MultiScenarioIntersectionEnv` reusa toda a máquina do env base; só a
+escolha do route file por episódio muda.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do
