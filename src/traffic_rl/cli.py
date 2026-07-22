@@ -120,6 +120,37 @@ def cmd_grid_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_grid_run(args: argparse.Namespace) -> int:
+    """Botão único: valida o grid, treina a IA (ou retoma) e compara com os
+    baselines, gerando o relatório. É o 'monte seu grid e a IA faz os
+    semáforos' de ponta a ponta."""
+    from traffic_rl.training.grid_train import find_grid_best_models, grid_run_tag
+
+    cfg = _load_grid(args)
+    tag = grid_run_tag(cfg)
+    n_tls = cfg.grid.n_intersections
+    print(f"== Grid {len(cfg.grid.rows)}×{len(cfg.grid.cols)} · {n_tls} cruzamentos ==")
+    for eixo, ruas in (("horizontais", cfg.grid.rows), ("verticais", cfg.grid.cols)):
+        print(f"  ruas {eixo}:")
+        for r in ruas:
+            print(f"    - {r.name} ({r.street_class}, {r.flow_vph:.0f} veíc/h)")
+
+    existing = find_grid_best_models(tag)
+    seeds = [int(s) for s in args.seeds.split(",")] if args.seeds else list(cfg.train.seeds)
+    faltam = [s for s in seeds if s not in existing]
+    if faltam and not args.skip_training:
+        print(f"\n== Treinando a IA (seeds {faltam}) — isto leva tempo, é retomável ==")
+        args.seeds = ",".join(str(s) for s in faltam)
+        cmd_grid_train(args)
+    elif args.skip_training:
+        print("\n== --skip-training: usando modelos já treinados ==")
+    else:
+        print("\n== IA já treinada para este grid — indo direto à comparação ==")
+
+    print("\n== Comparando a IA com os 4 semáforos clássicos ==")
+    return cmd_grid_compare(args)
+
+
 def cmd_grid_compare(args: argparse.Namespace) -> int:
     from traffic_rl.analysis.report import generate_report, load_eval_curves
     from traffic_rl.controllers.grid import GRID_BASELINES
@@ -198,6 +229,16 @@ def main(argv: list[str] | None = None) -> int:
     p_gc.add_argument("--smoke", action="store_true")
     p_gc.add_argument("--out", type=Path)
     p_gc.set_defaults(func=cmd_grid_compare)
+
+    p_gr = sub.add_parser(
+        "grid-run", help="monte seu grid e a IA faz os semáforos: treina + compara + relatório"
+    )
+    p_gr.add_argument("--grid", type=Path, help="YAML do seu grid (default: configs/grid.yaml)")
+    p_gr.add_argument("--smoke", action="store_true", help="versão rápida de validação")
+    p_gr.add_argument("--seeds", help="lista separada por vírgula (default: config)")
+    p_gr.add_argument("--skip-training", action="store_true", help="só comparar (IA já treinada)")
+    p_gr.add_argument("--out", type=Path)
+    p_gr.set_defaults(func=cmd_grid_run)
 
     p_abl = sub.add_parser("ablation", help="ablações de observação e recompensa")
     _add_common(p_abl)
