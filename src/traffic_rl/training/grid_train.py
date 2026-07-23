@@ -37,7 +37,8 @@ from traffic_rl.training.train import (
 
 
 def grid_run_tag(cfg: GridProjectConfig) -> str:
-    return f"grid_{len(cfg.grid.rows)}x{len(cfg.grid.cols)}_{cfg.env.reward_mode}"
+    coord = "_coord" if getattr(cfg.env, "coordination", False) else ""
+    return f"grid_{len(cfg.grid.rows)}x{len(cfg.grid.cols)}_{cfg.env.reward_mode}{coord}"
 
 
 def find_grid_best_models(tag: str) -> dict[int, Path]:

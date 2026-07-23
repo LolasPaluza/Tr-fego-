@@ -100,6 +100,7 @@ class GridEnvConfig(BaseModel):
     reward_mode: str = "r_espera"
     starvation: StarvationConfig = StarvationConfig()
     use_libsumo: bool = True
+    coordination: bool = False  # Fase 3: cada cruzamento vê a fila dos vizinhos
 
     @model_validator(mode="after")
     def _check_delta(self) -> GridEnvConfig:

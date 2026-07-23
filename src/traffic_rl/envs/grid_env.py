@@ -159,6 +159,23 @@ class GridTrafficEnv:
         self._arrived_cum = 0
         self._current_tripinfo: Path | None = None
 
+        # Fase 3 (coordenação): vizinhos de cada cruzamento e soma das
+        # capacidades de fila, para normalizar a fila total do vizinho.
+        self.coordination = bool(getattr(self.cfg.env, "coordination", False))
+        self._neighbors: list[tuple[int, int, int, int]] = []
+        self._cap_sum: list[float] = []
+        if self.coordination and self.topo is not None:
+            R, C = self.topo.R, self.topo.C
+            for k in range(self.n_tls):
+                i, j = k // C, k % C
+                north = (i - 1) * C + j if i > 0 else -1
+                south = (i + 1) * C + j if i < R - 1 else -1
+                west = i * C + (j - 1) if j > 0 else -1
+                east = i * C + (j + 1) if j < C - 1 else -1
+                self._neighbors.append((north, south, west, east))
+        for st in self.tls:
+            self._cap_sum.append(float(np.sum(st.queue_caps())))
+
     # ------------------------------------------------------------------ sumo
 
     def _route_file_for(self, traffic_seed: int) -> Path:
@@ -383,10 +400,32 @@ class GridTrafficEnv:
             "tripinfo_path": str(self._current_tripinfo) if self._current_tripinfo else None,
         }
 
+    @property
+    def obs_dim(self) -> int:
+        """Dimensão da observação por cruzamento (9 base; +4 vizinhos na Fase 3)."""
+        return GridMinimalVectorizer.size + (4 if self.coordination else 0)
+
     def vectorize(self, observations: list[Observation]) -> np.ndarray:
-        return np.stack(
+        base = np.stack(
             [st.vectorizer(obs) for st, obs in zip(self.tls, observations, strict=True)]
         )
+        if not self.coordination:
+            return base
+        # fila total normalizada de cada cruzamento (0..1)
+        totals = np.array(
+            [
+                min(float(np.sum(o.queues)) / max(self._cap_sum[k], 1.0), 1.0)
+                for k, o in enumerate(observations)
+            ],
+            dtype=np.float32,
+        )
+        # para cada cruzamento, anexa a congestão dos 4 vizinhos (0 na borda)
+        neigh = np.zeros((self.n_tls, 4), dtype=np.float32)
+        for k, (n, s, w, e) in enumerate(self._neighbors):
+            for slot, idx in enumerate((n, s, w, e)):
+                if idx >= 0:
+                    neigh[k, slot] = totals[idx]
+        return np.concatenate([base, neigh], axis=1)
 
 
 def _reward_cfg(cfg: GridProjectConfig):
@@ -409,7 +448,7 @@ class GridVecEnv(VecEnv):
         self._episode_index = 0
         self._actions: np.ndarray | None = None
         observation_space = spaces.Box(
-            0.0, 1.0, shape=(GridMinimalVectorizer.size,), dtype=np.float32
+            0.0, 1.0, shape=(self.core.obs_dim,), dtype=np.float32
         )
         super().__init__(self.core.n_tls, observation_space, spaces.Discrete(N_STAGES))
 

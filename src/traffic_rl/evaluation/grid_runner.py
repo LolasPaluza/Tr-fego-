@@ -35,22 +35,38 @@ def evaluate_grid_controller(
     seed_base = (
         traffic_seed_base if traffic_seed_base is not None else cfg.eval.traffic_seed_base
     )
+    coordinated_dqn = method_name == "dqn" and getattr(cfg.env, "coordination", False)
     rows = []
     with tempfile.TemporaryDirectory(prefix="tripinfo_grid_") as tmp:
         env = GridTrafficEnv(cfg, tripinfo_dir=tmp)
         try:
-            controllers = make_grid_controllers(method_name, cfg, env, model_path)
+            model = None
+            controllers = None
+            if coordinated_dqn:
+                # a política coordenada precisa do vetor com vizinhos (13d),
+                # que só o env monta — não passa pelo contrato act(obs) local
+                from stable_baselines3 import DQN
+
+                model = DQN.load(str(model_path), device="cpu")
+            else:
+                controllers = make_grid_controllers(method_name, cfg, env, model_path)
             for ep in range(n_episodes):
                 traffic_seed = seed_base + ep
-                for ctrl in controllers:
-                    ctrl.reset()
+                if controllers is not None:
+                    for ctrl in controllers:
+                        ctrl.reset()
                 observations, info = env.reset(traffic_seed)
                 done = False
                 while not done:
-                    actions = [
-                        ctrl.act(obs)
-                        for ctrl, obs in zip(controllers, observations, strict=True)
-                    ]
+                    if coordinated_dqn:
+                        vecs = env.vectorize(observations)
+                        acts, _ = model.predict(vecs, deterministic=True)
+                        actions = [int(a) for a in acts]
+                    else:
+                        actions = [
+                            ctrl.act(obs)
+                            for ctrl, obs in zip(controllers, observations, strict=True)
+                        ]
                     observations, _rewards, done, info = env.step(actions)
                 fila_maxima = float(info["episode_max_queue"])
                 tripinfo_path = info["tripinfo_path"]

@@ -140,3 +140,28 @@ def test_grid_proportional_prioritizes_declared_avenue(gcfg):
         assert greens[0] > greens[2], "avenida declarada deve receber mais verde"
     finally:
         env.close()
+
+
+def test_grid_coordination_observation(gcfg):
+    """Fase 3: com coordination=True, cada cruzamento vê os 4 vizinhos (obs 9→13)."""
+    import numpy as np
+
+    from traffic_rl.grid_config import GridProjectConfig
+    coord_cfg = GridProjectConfig(
+        grid=gcfg.grid,
+        env={**gcfg.env.model_dump(), "coordination": True},
+        train=gcfg.train, eval=gcfg.eval,
+    )
+    env = GridTrafficEnv(coord_cfg)
+    try:
+        assert env.obs_dim == 13
+        obs, _ = env.reset(traffic_seed=1)
+        vec = env.vectorize(obs)
+        assert vec.shape == (env.n_tls, 13)
+        assert np.all(vec >= 0) and np.all(vec <= 1)
+        # cruzamento central (idx 4 num 3x3) tem 4 vizinhos válidos
+        assert all(n >= 0 for n in env._neighbors[4])
+        # cruzamento de canto (idx 0) tem 2 vizinhos de borda (-1)
+        assert env._neighbors[0].count(-1) == 2
+    finally:
+        env.close()
