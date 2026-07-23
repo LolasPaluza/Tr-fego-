@@ -221,6 +221,25 @@ cenários fora do treino, possivelmente ao custo de um pouco de desempenho no
 pico). O `MultiScenarioIntersectionEnv` reusa toda a máquina do env base; só a
 escolha do route file por episódio muda.
 
+## ADR-021 — Fase 3: coordenação entre cruzamentos, LIGADA por padrão
+
+**Contexto:** na Fase 2 cada agente via só a própria fila e empatava com o
+tempo fixo na malha. Semáforos precisam trabalhar em conjunto. Duas
+arquiteturas foram consideradas: (a) um "cérebro central" que escolhe a ação
+conjunta de todos os cruzamentos, e (b) execução distribuída com comunicação
+(cada agente vê os vizinhos). **Decisão:** (b), e coordenação LIGADA por
+padrão (`env.coordination=True`). O cérebro central foi descartado como
+arquitetura principal porque o espaço de ação conjunta é 4^K (262 mil para
+9 cruzamentos, ~10^15 para 25) — intratável e ponto único de falha. A
+observação de cada cruzamento passa de 9 para 13 dims (própria fila + fila
+total normalizada dos 4 vizinhos N/S/W/E, 0 na borda), permitindo a onda
+verde emergir sem coordenador central. **Consequências:** escala para
+qualquer tamanho de malha (ação por cruzamento continua 4) e é robusto (a
+falha de um não derruba os outros); a coordenação é implícita (não garante o
+ótimo). A malha OSM (Fase 4, topo None) mantém observação local — coordenação
+exige a topologia do grid. Treino centralizado/execução distribuída (crítico
+global) e um "maestro" hierárquico ficam como evolução futura.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

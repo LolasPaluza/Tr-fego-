@@ -44,6 +44,9 @@ env:
   reward_mode: r_espera
   starvation: {enabled: true, threshold_s: 120.0, penalty: 1.0}
   use_libsumo: true
+  # coordination é LIGADA por padrão: cada cruzamento vê a fila dos vizinhos
+  # (semáforos trabalham em conjunto, "onda verde"). Para reproduzir a Fase 2
+  # sem coordenação, acrescente: coordination: false
 
 train:
   scenario: grid           # informativo; o cenário do grid é este próprio arquivo

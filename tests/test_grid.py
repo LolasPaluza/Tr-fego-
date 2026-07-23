@@ -13,8 +13,11 @@ from traffic_rl.paths import configs_dir
 
 @pytest.fixture(scope="module")
 def gcfg():
+    # base dos testes de geometria/contrato: sem coordenação (obs 9d),
+    # para checar o núcleo isolado da feature de vizinhança
     return load_grid_config(
-        configs_dir() / "grid.yaml", overrides={"env": {"episode_length_s": 150.0}}
+        configs_dir() / "grid.yaml",
+        overrides={"env": {"episode_length_s": 150.0, "coordination": False}},
     )
 
 

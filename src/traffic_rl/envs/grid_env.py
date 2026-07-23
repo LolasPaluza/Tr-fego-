@@ -161,10 +161,14 @@ class GridTrafficEnv:
 
         # Fase 3 (coordenação): vizinhos de cada cruzamento e soma das
         # capacidades de fila, para normalizar a fila total do vizinho.
-        self.coordination = bool(getattr(self.cfg.env, "coordination", False))
+        # coordenação só faz sentido no grid (a malha OSM da Fase 4 tem topo
+        # None e mantém a observação local de 9 dims)
+        self.coordination = (
+            bool(getattr(self.cfg.env, "coordination", False)) and self.topo is not None
+        )
         self._neighbors: list[tuple[int, int, int, int]] = []
         self._cap_sum: list[float] = []
-        if self.coordination and self.topo is not None:
+        if self.coordination:
             R, C = self.topo.R, self.topo.C
             for k in range(self.n_tls):
                 i, j = k // C, k % C
