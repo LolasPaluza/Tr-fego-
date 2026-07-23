@@ -1,0 +1,85 @@
+grid:
+  rows:
+  - name: Rua H1
+    street_class: local
+    flow_vph: 155.0
+  - name: Avenida H2
+    street_class: avenida
+    flow_vph: 550.0
+  - name: Rua H3
+    street_class: local
+    flow_vph: 190.0
+  - name: Rua H4
+    street_class: avenida
+    flow_vph: 550.0
+  - name: Rua H5
+    street_class: local
+    flow_vph: 130.0
+  cols:
+  - name: Rua V1
+    street_class: local
+    flow_vph: 130.0
+  - name: Avenida V2
+    street_class: avenida
+    flow_vph: 550.0
+  - name: Rua V3
+    street_class: avenida
+    flow_vph: 550.0
+  - name: Rua V4
+    street_class: local
+    flow_vph: 24.0
+  - name: Rua V5
+    street_class: avenida
+    flow_vph: 550.0
+  block_length_m: 300.0
+  boundary_length_m: 300.0
+  turn_shares:
+    straight: 0.84
+    right: 0.1
+    left: 0.06
+  truck_share_avenida: 0.05
+  truck_share_local: 0.0
+env:
+  signal:
+    min_green_s: 10.0
+    max_green_s: 120.0
+    yellow_s: 3.0
+    all_red_s: 2.0
+  episode_length_s: 600.0
+  delta_time_s: 5.0
+  reward_mode: r_espera
+  starvation:
+    enabled: true
+    threshold_s: 120.0
+    penalty: 1.0
+  use_libsumo: true
+train:
+  scenario: grid
+  seeds:
+  - 42
+  total_timesteps: 5000
+  eval_freq: 2000
+  n_eval_episodes: 1
+  checkpoint_freq: 2000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn:
+    learning_rate: 0.0005
+    buffer_size: 100000
+    learning_starts: 200
+    batch_size: 64
+    gamma: 0.99
+    train_freq: 1
+    target_update_interval: 1000
+    exploration_fraction: 0.3
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.02
+    net_arch:
+    - 256
+    - 256
+    double_dqn: true
+eval:
+  n_episodes: 2
+  traffic_seed_base: 10000
+  scenarios:
+  - grid
