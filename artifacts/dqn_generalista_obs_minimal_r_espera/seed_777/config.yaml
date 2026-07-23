@@ -1,0 +1,95 @@
+env:
+  network:
+    approach_length_m: 300.0
+    avenue_lanes: 3
+    avenue_speed_kmh: 60.0
+    local_lanes: 1
+    local_speed_kmh: 40.0
+  signal:
+    min_green_s: 10.0
+    max_green_s: 120.0
+    yellow_s: 3.0
+    all_red_s: 2.0
+  episode_length_s: 3600.0
+  delta_time_s: 5.0
+  obs_mode: obs_minimal
+  reward_mode: r_espera
+  starvation:
+    enabled: true
+    threshold_s: 120.0
+    penalty: 1.0
+  use_libsumo: true
+scenarios:
+  pico_assimetrico:
+    name: pico_assimetrico
+    avenue_flow_vph: 1200.0
+    local_flow_vph: 300.0
+    truck_share: 0.1
+    turn_shares:
+      straight: 0.7
+      right: 0.15
+      left: 0.15
+  fora_pico:
+    name: fora_pico
+    avenue_flow_vph: 400.0
+    local_flow_vph: 150.0
+    truck_share: 0.0
+    turn_shares:
+      straight: 0.7
+      right: 0.15
+      left: 0.15
+  balanceado:
+    name: balanceado
+    avenue_flow_vph: 500.0
+    local_flow_vph: 500.0
+    truck_share: 0.0
+    turn_shares:
+      straight: 0.7
+      right: 0.15
+      left: 0.15
+  pico_invertido:
+    name: pico_invertido
+    avenue_flow_vph: 500.0
+    local_flow_vph: 700.0
+    truck_share: 0.1
+    turn_shares:
+      straight: 0.7
+      right: 0.15
+      left: 0.15
+train:
+  scenario: pico_assimetrico
+  seeds:
+  - 42
+  - 123
+  - 7
+  - 2024
+  - 777
+  total_timesteps: 300000
+  eval_freq: 10000
+  n_eval_episodes: 3
+  checkpoint_freq: 25000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn:
+    learning_rate: 0.0005
+    buffer_size: 100000
+    learning_starts: 1000
+    batch_size: 64
+    gamma: 0.99
+    train_freq: 1
+    target_update_interval: 1000
+    exploration_fraction: 0.3
+    exploration_initial_eps: 1.0
+    exploration_final_eps: 0.02
+    net_arch:
+    - 256
+    - 256
+    double_dqn: true
+eval:
+  n_episodes: 20
+  traffic_seed_base: 10000
+  scenarios:
+  - pico_assimetrico
+  - fora_pico
+  - balanceado
+  - pico_invertido
