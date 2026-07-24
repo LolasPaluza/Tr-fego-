@@ -16,6 +16,8 @@ Segmento k liga a posição k à k+1 na lista de nós da rua
 
 from __future__ import annotations
 
+import hashlib
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -188,16 +190,33 @@ def _connections_xml(topo: GridTopology) -> str:
 
 
 def build_grid_network(spec: GridSpec, out_dir: Path) -> Path:
-    """Escreve nod/edg/con do grid e roda netconvert. Retorna o .net.xml."""
+    """Escreve nod/edg/con do grid e roda netconvert. Retorna o .net.xml.
+
+    Seguro para uso concorrente (várias seeds treinando em paralelo):
+    - o nome final inclui um hash da especificação, então grids diferentes
+      nunca colidem no mesmo arquivo;
+    - os intermediários e a saída do netconvert usam nomes únicos por
+      processo e só viram o arquivo final via `os.replace` (atômico), de modo
+      que um leitor jamais enxerga XML pela metade.
+    """
     topo = GridTopology(spec)
     out_dir.mkdir(parents=True, exist_ok=True)
-    nod = out_dir / "grid.nod.xml"
-    edg = out_dir / "grid.edg.xml"
-    con = out_dir / "grid.con.xml"
-    net_file = out_dir / "grid.net.xml"
-    nod.write_text(_nodes_xml(topo), encoding="utf-8")
-    edg.write_text(_edges_xml(topo), encoding="utf-8")
-    con.write_text(_connections_xml(topo), encoding="utf-8")
+    nodes_xml, edges_xml, cons_xml = _nodes_xml(topo), _edges_xml(topo), _connections_xml(topo)
+    digest = hashlib.sha1(
+        (nodes_xml + edges_xml + cons_xml).encode("utf-8")
+    ).hexdigest()[:10]
+    net_file = out_dir / f"grid_{digest}.net.xml"
+    if net_file.exists():
+        return net_file  # já gerado por este ou outro processo
+
+    stem = f"grid_{digest}.{os.getpid()}"
+    nod = out_dir / f"{stem}.nod.xml"
+    edg = out_dir / f"{stem}.edg.xml"
+    con = out_dir / f"{stem}.con.xml"
+    tmp_net = out_dir / f"{stem}.net.xml.tmp"
+    nod.write_text(nodes_xml, encoding="utf-8")
+    edg.write_text(edges_xml, encoding="utf-8")
+    con.write_text(cons_xml, encoding="utf-8")
     cmd = [
         netconvert_binary(),
         "--node-files", str(nod),
@@ -205,9 +224,14 @@ def build_grid_network(spec: GridSpec, out_dir: Path) -> Path:
         "--connection-files", str(con),
         "--no-turnarounds", "true",
         "--tls.yellow.time", "3",
-        "--output-file", str(net_file),
+        "--output-file", str(tmp_net),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise RuntimeError(f"netconvert (grid) falhou:\n{result.stderr}")
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(f"netconvert (grid) falhou:\n{result.stderr}")
+        os.replace(tmp_net, net_file)  # publicação atômica
+    finally:
+        for p in (nod, edg, con, tmp_net):
+            p.unlink(missing_ok=True)
     return net_file
