@@ -60,6 +60,20 @@ class StreetSpec(BaseModel):
         return CLASS_SPEED_MS[self.street_class]
 
 
+class DemandEvent(BaseModel):
+    """Evento imprevisto no meio do episódio (acidente, obra, show).
+
+    A partir de `at_s`, os fluxos são multiplicados pelos fatores por classe —
+    simulando um desvio de tráfego que NENHUM controlador conhece de antemão.
+    É o cenário em que o tempo fixo estruturalmente não pode reagir (o plano é
+    fixo) e um controlador adaptativo deveria mostrar valor. Ver ADR-022.
+    """
+
+    at_s: float = Field(1800.0, gt=0, description="momento da mudança (s)")
+    avenue_factor: float = Field(0.4, ge=0.0, description="multiplicador nas avenidas")
+    local_factor: float = Field(2.5, ge=0.0, description="multiplicador nas vias locais")
+
+
 class GridSpec(BaseModel):
     rows: list[StreetSpec]  # ruas leste-oeste, de norte para sul
     cols: list[StreetSpec]  # ruas norte-sul, de oeste para leste
@@ -68,6 +82,7 @@ class GridSpec(BaseModel):
     turn_shares: TurnShares = TurnShares()
     truck_share_avenida: float = Field(0.10, ge=0.0, le=0.5)
     truck_share_local: float = Field(0.0, ge=0.0, le=0.5)
+    event: DemandEvent | None = None  # None = demanda estacionária (padrão)
 
     @field_validator("rows", "cols")
     @classmethod

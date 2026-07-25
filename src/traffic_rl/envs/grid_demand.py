@@ -62,11 +62,15 @@ def build_grid_routes(
     topo = GridTopology(spec)
     rng = np.random.default_rng(traffic_seed)
     out_dir.mkdir(parents=True, exist_ok=True)
-    route_file = out_dir / f"grid_seed{traffic_seed}.rou.xml"
+    ev = getattr(spec, "event", None)
+    # sufixo do evento evita reusar o .rou.xml da demanda estacionária
+    suffix = "" if ev is None else f"_ev{int(ev.at_s)}_{ev.avenue_factor}_{ev.local_factor}"
+    route_file = out_dir / f"grid_seed{traffic_seed}{suffix}.rou.xml"
 
     vehicles: list[tuple[float, str, str, str]] = []  # (depart, id, vtype, edges)
     counters: dict[str, int] = {}
     horizon = int(episode_length_s)
+    event = getattr(spec, "event", None)
     for entry in topo.entry_points():
         street = entry.street
         p = street.flow_vph / 3600.0
@@ -74,8 +78,18 @@ def build_grid_routes(
             spec.truck_share_avenida if street.street_class == "avenida"
             else spec.truck_share_local
         )
-        # chegadas Bernoulli(p) por segundo do horizonte
-        arrivals = np.flatnonzero(rng.random(horizon) < p)
+        # taxa por segundo; com evento, muda a partir de at_s (o desvio que
+        # nenhum controlador conhece de antemão)
+        rates = np.full(horizon, p, dtype=float)
+        if event is not None:
+            factor = (
+                event.avenue_factor if street.street_class == "avenida"
+                else event.local_factor
+            )
+            t0 = min(int(event.at_s), horizon)
+            rates[t0:] = p * factor
+        # chegadas Bernoulli(taxa) por segundo do horizonte
+        arrivals = np.flatnonzero(rng.random(horizon) < rates)
         for t in arrivals:
             vtype = "caminhao" if rng.random() < truck_share else "carro"
             prefix = f"{_CLASS_PREFIX[street.street_class]}_{street.slug}_{vtype}"
