@@ -62,18 +62,24 @@ def main() -> int:
     ]
     jobs += [(f"dqn_seed{s}", "dqn", p) for s, p in sorted(models.items())]
 
+    # granularidade de UM episódio: com reinícios frequentes do ambiente,
+    # cada episódio concluído (~15 s) fica salvo e não se perde
     frames = []
     for job_id, method, model_path in jobs:
-        part = parts / f"{job_id}.csv"
-        if part.exists():
-            print(f"[pulando] {job_id} (já avaliado)", flush=True)
-            frames.append(pd.read_csv(part))
-            continue
-        print(f"[avaliando] {job_id}", flush=True)
-        df = evaluate_grid_controller(cfg, method, model_path, cfg.eval.n_episodes)
-        df["dqn_seed"] = job_id.removeprefix("dqn_seed") if method == "dqn" else pd.NA
-        df.to_csv(part, index=False)  # salva ANTES de seguir: resiliente
-        frames.append(df)
+        for ep in range(cfg.eval.n_episodes):
+            part = parts / f"{job_id}_ep{ep}.csv"
+            if part.exists():
+                frames.append(pd.read_csv(part))
+                continue
+            print(f"[avaliando] {job_id} episódio {ep}", flush=True)
+            df = evaluate_grid_controller(
+                cfg, method, model_path, n_episodes=1,
+                traffic_seed_base=cfg.eval.traffic_seed_base + ep,
+            )
+            df["episode"] = ep
+            df["dqn_seed"] = job_id.removeprefix("dqn_seed") if method == "dqn" else pd.NA
+            df.to_csv(part, index=False)  # salva ANTES de seguir
+            frames.append(df)
 
     full = pd.concat(frames, ignore_index=True)
     full.to_csv(out_dir / "metrics.csv", index=False)
