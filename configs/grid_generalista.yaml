@@ -1,0 +1,52 @@
+# Grid COORDENADO + GENERALISTA — a IA treina com demandas VARIADAS.
+#
+# Diferença para grid_coord.yaml: aqui a demanda muda a cada episódio (o
+# ambiente sorteia entre perfis: pico nas avenidas, pico nas locais,
+# equilibrado, fora de pico). A IA não consegue decorar um padrão — precisa
+# aprender a regra geral "priorize quem tem fila".
+#
+# É a mesma técnica que consertou a especialização na Fase 1 (-74% de espera
+# nos cenários fora do treino), agora aplicada à malha coordenada.
+grid:
+  rows:
+    - {name: "Rua Harmonia",    class: local,   flow_vph: 130}
+    - {name: "Av. Paulista",    class: avenida, flow_vph: 550}
+    - {name: "Rua Wisard",      class: local,   flow_vph: 120}
+  cols:
+    - {name: "Rua Girassol",    class: local,   flow_vph: 120}
+    - {name: "Av. Rebouças",    class: avenida, flow_vph: 450}
+    - {name: "Rua Aspicuelta",  class: local,   flow_vph: 150}
+  block_length_m: 300.0
+  boundary_length_m: 300.0
+  turn_shares: {straight: 0.84, right: 0.10, left: 0.06}
+  truck_share_avenida: 0.05
+  truck_share_local: 0.0
+  # perfis sorteados a cada episódio (multiplicadores sobre os fluxos acima)
+  demand_profiles:
+    - {name: "normal",         avenue_factor: 1.0, local_factor: 1.0}
+    - {name: "pico_avenida",   avenue_factor: 1.3, local_factor: 0.8}
+    - {name: "pico_local",     avenue_factor: 0.5, local_factor: 2.2}
+    - {name: "equilibrado",    avenue_factor: 0.7, local_factor: 1.6}
+    - {name: "fora_de_pico",   avenue_factor: 0.5, local_factor: 0.6}
+env:
+  signal: {min_green_s: 10.0, max_green_s: 120.0, yellow_s: 3.0, all_red_s: 2.0}
+  episode_length_s: 3600.0
+  delta_time_s: 5.0
+  reward_mode: r_espera
+  starvation: {enabled: true, threshold_s: 120.0, penalty: 1.0}
+  use_libsumo: true
+  coordination: true
+train:
+  scenario: grid
+  seeds: [42, 123, 7, 2024, 777, 2025, 88, 314]
+  total_timesteps: 600000
+  eval_freq: 10000
+  n_eval_episodes: 3
+  checkpoint_freq: 25000
+  early_stopping: false
+  early_stopping_patience: 6
+  dqn: {learning_rate: 0.0005, buffer_size: 100000, learning_starts: 2000, batch_size: 64, gamma: 0.99, train_freq: 1, target_update_interval: 1000, exploration_fraction: 0.3, exploration_initial_eps: 1.0, exploration_final_eps: 0.02, net_arch: [256, 256], double_dqn: true}
+eval:
+  n_episodes: 20
+  traffic_seed_base: 10000
+  scenarios: [grid]
