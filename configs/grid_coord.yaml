@@ -26,10 +26,11 @@ env:
   coordination: true
 train:
   scenario: grid
-  seeds: [42, 123, 7, 2024, 777]
+  seeds: [42, 123, 7, 2024, 777, 2025, 88, 314]  # 5 originais + 3 novas
   total_timesteps: 600000
   eval_freq: 10000
-  n_eval_episodes: 1
+  n_eval_episodes: 3   # 3 simulações por avaliação: seleção do melhor
+                       # modelo deixa de ser refém do ruído de 1 episódio
   checkpoint_freq: 25000
   early_stopping: false
   early_stopping_patience: 6

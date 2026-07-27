@@ -240,6 +240,25 @@ falha de um não derruba os outros); a coordenação é implícita (não garante
 exige a topologia do grid. Treino centralizado/execução distribuída (crítico
 global) e um "maestro" hierárquico ficam como evolução futura.
 
+## ADR-023 — A instabilidade era da SELEÇÃO do modelo, não do aprendizado
+
+**Contexto:** na Fase 3 coordenada, 3 de 5 seeds bateram o melhor baseline
+(49–76 s vs 99 s) e 2 falharam (180 s, 792 s), com média refém do pior caso.
+Diagnóstico das curvas: a avaliação periódica rodava UMA simulação de tráfego
+(`n_eval_episodes: 1`) e o `best_model` era o MÁXIMO dessa medição. O ruído
+entre avaliações consecutivas da mesma seed chegava a 5× (−706, −2597, −533),
+então escolher o máximo é quase sorteio — quem teve mais avaliações (as
+retomadas por reinício do ambiente variaram de 12 a 60) ou deu sorte num
+episódio levava um modelo bom. **Decisão:** avaliar com 3 simulações por
+checagem (ruído cai ~√3) e re-treinar TODAS as seeds — as 5 originais mais 3
+novas (2025, 88, 314) — sob uma tag própria (`_sel3`), nunca misturando runs
+com critérios de seleção diferentes. Re-treinar apenas as seeds ruins e ficar
+com o melhor resultado seria cherry-picking e foi explicitamente rejeitado.
+**Consequências:** custo maior por avaliação (rara, a cada 10k passos) em
+troca de uma seleção confiável; a comparação continua honesta porque a
+mudança vale igualmente para todas as seeds e todos os resultados são
+reportados.
+
 ## ADR-012 — Torch com CUDA no sandbox (custo só de disco)
 
 **Contexto:** o índice de wheels só-CPU do PyTorch ficou inacessível atrás do

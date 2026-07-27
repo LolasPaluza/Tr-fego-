@@ -37,8 +37,12 @@ from traffic_rl.training.train import (
 
 
 def grid_run_tag(cfg: GridProjectConfig) -> str:
+    """Tag do run. Inclui n_eval_episodes porque ele muda a CONFIABILIDADE da
+    seleção do melhor modelo — runs com critérios diferentes não devem ser
+    misturados na mesma comparação (ver ADR-023)."""
     coord = "_coord" if getattr(cfg.env, "coordination", False) else ""
-    return f"grid_{len(cfg.grid.rows)}x{len(cfg.grid.cols)}_{cfg.env.reward_mode}{coord}"
+    sel = "" if cfg.train.n_eval_episodes <= 1 else f"_sel{cfg.train.n_eval_episodes}"
+    return f"grid_{len(cfg.grid.rows)}x{len(cfg.grid.cols)}_{cfg.env.reward_mode}{coord}{sel}"
 
 
 def find_grid_best_models(tag: str) -> dict[int, Path]:
