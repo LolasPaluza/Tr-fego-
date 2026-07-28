@@ -182,11 +182,33 @@ class GridTrafficEnv:
 
     # ------------------------------------------------------------------ sumo
 
+    def _profile_for_episode(self, traffic_seed: int):
+        """Sorteia (determinístico na seed) o perfil de demanda do episódio.
+
+        Com `demand_profiles` preenchido, cada episódio tem uma carga
+        diferente — é o que força a IA a generalizar em vez de decorar um
+        padrão (ADR-024). Sem perfis, retorna None (demanda fixa).
+        """
+        profiles = getattr(self.cfg.grid, "demand_profiles", None)
+        if not profiles:
+            return None
+        return profiles[traffic_seed % len(profiles)]
+
     def _route_file_for(self, traffic_seed: int) -> Path:
         """Gera/retorna o .rou.xml do episódio — ponto de extensão da Fase 4
         (o ambiente OSM sobrescreve com demanda sobre a malha real)."""
+        spec = self.cfg.grid
+        profile = self._profile_for_episode(traffic_seed)
+        if profile is not None:
+            scaled = spec.model_copy(deep=True)
+            for street in scaled.rows + scaled.cols:
+                f = (profile.avenue_factor if street.street_class == "avenida"
+                     else profile.local_factor)
+                street.flow_vph = max(street.flow_vph * f, 1.0)
+            self._current_profile = profile.name
+            spec = scaled
         return build_grid_routes(
-            self.cfg.grid, generated_dir(), traffic_seed, self.cfg.env.episode_length_s
+            spec, generated_dir(), traffic_seed, self.cfg.env.episode_length_s
         )
 
     def _start_sumo(self, traffic_seed: int) -> None:

@@ -74,6 +74,14 @@ class DemandEvent(BaseModel):
     local_factor: float = Field(2.5, ge=0.0, description="multiplicador nas vias locais")
 
 
+class DemandProfile(BaseModel):
+    """Perfil de demanda sorteado por episódio (generalização, ADR-024)."""
+
+    name: str = "perfil"
+    avenue_factor: float = Field(1.0, ge=0.0)
+    local_factor: float = Field(1.0, ge=0.0)
+
+
 class GridSpec(BaseModel):
     rows: list[StreetSpec]  # ruas leste-oeste, de norte para sul
     cols: list[StreetSpec]  # ruas norte-sul, de oeste para leste
@@ -83,6 +91,8 @@ class GridSpec(BaseModel):
     truck_share_avenida: float = Field(0.10, ge=0.0, le=0.5)
     truck_share_local: float = Field(0.0, ge=0.0, le=0.5)
     event: DemandEvent | None = None  # None = demanda estacionária (padrão)
+    # perfis sorteados por episódio; vazio = demanda fixa (Fase 2/3)
+    demand_profiles: list[DemandProfile] = []
 
     @field_validator("rows", "cols")
     @classmethod
